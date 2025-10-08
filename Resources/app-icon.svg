@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background Circle -->
+  <circle cx="128" cy="128" r="120" fill="#1E3A8A" stroke="#3B82F6" stroke-width="4"/>
+  
+  <!-- Inner Circle for depth -->
+  <circle cx="128" cy="128" r="100" fill="#2563EB" opacity="0.9"/>
+  
+  <!-- Calendar Icon Base -->
+  <rect x="64" y="80" width="128" height="96" rx="12" fill="#FFFFFF"/>
+  
+  <!-- Calendar Header -->
+  <rect x="64" y="80" width="128" height="24" rx="12" fill="#3B82F6"/>
+  <rect x="64" y="92" width="128" height="12" fill="#3B82F6"/>
+  
+  <!-- Calendar Rings -->
+  <rect x="88" y="68" width="8" height="24" rx="4" fill="#64748B"/>
+  <rect x="160" y="68" width="8" height="24" rx="4" fill="#64748B"/>
+  
+  <!-- Calendar Grid Lines -->
+  <line x1="80" y1="120" x2="176" y2="120" stroke="#E2E8F0" stroke-width="1"/>
+  <line x1="80" y1="136" x2="176" y2="136" stroke="#E2E8F0" stroke-width="1"/>
+  <line x1="80" y1="152" x2="176" y2="152" stroke="#E2E8F0" stroke-width="1"/>
+  
+  <line x1="96" y1="104" x2="96" y2="168" stroke="#E2E8F0" stroke-width="1"/>
+  <line x1="112" y1="104" x2="112" y2="168" stroke="#E2E8F0" stroke-width="1"/>
+  <line x1="128" y1="104" x2="128" y2="168" stroke="#E2E8F0" stroke-width="1"/>
+  <line x1="144" y1="104" x2="144" y2="168" stroke="#E2E8F0" stroke-width="1"/>
+  <line x1="160" y1="104" x2="160" y2="168" stroke="#E2E8F0" stroke-width="1"/>
+  
+  <!-- Absence Markers (X marks) -->
+  <g stroke="#EF4444" stroke-width="3" stroke-linecap="round">
+    <!-- X mark 1 -->
+    <line x1="116" y1="124" x2="124" y2="132"/>
+    <line x1="124" y1="124" x2="116" y2="132"/>
+    
+    <!-- X mark 2 -->
+    <line x1="132" y1="140" x2="140" y2="148"/>
+    <line x1="140" y1="140" x2="132" y2="148"/>
+    
+    <!-- X mark 3 -->
+    <line x1="148" y1="124" x2="156" y2="132"/>
+    <line x1="156" y1="124" x2="148" y2="132"/>
+  </g>
+  
+  <!-- Present Markers (Check marks) -->
+  <g stroke="#10B981" stroke-width="3" stroke-linecap="round" fill="none">
+    <!-- Check mark 1 -->
+    <path d="M84 128 L88 132 L92 124"/>
+    
+    <!-- Check mark 2 -->
+    <path d="M164 144 L168 148 L172 140"/>
+    
+    <!-- Check mark 3 -->
+    <path d="M100 156 L104 160 L108 152"/>
+  </g>
+  
+  <!-- User Icon -->
+  <circle cx="128" cy="200" r="12" fill="#FFFFFF"/>
+  <path d="M116 220 Q116 212 128 212 Q140 212 140 220 L140 224 L116 224 Z" fill="#FFFFFF"/>
+  
+  <!-- Professional Badge -->
+  <circle cx="200" cy="80" r="20" fill="#F59E0B"/>
+  <text x="200" y="86" text-anchor="middle" fill="#FFFFFF" font-family="Arial, sans-serif" font-size="16" font-weight="bold">H</text>
+</svg>

@@ -1,0 +1,362 @@
+<Window x:Class="FehlzeitApp.Views.LoginWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Professional Edition" Height="700" Width="1000" 
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize"
+        Background="#F8FAFC"
+        Icon="/Resources/app-icon.ico">
+    
+    <Window.Resources>
+        <!-- Professional Login Theme - Harmonized with Logo -->
+        <SolidColorBrush x:Key="PrimaryColor" Color="#1E3A8A"/>
+        <SolidColorBrush x:Key="SecondaryColor" Color="#1E40AF"/>
+        <SolidColorBrush x:Key="AccentColor" Color="#3B82F6"/>
+        <SolidColorBrush x:Key="AccentHover" Color="#2563EB"/>
+        <SolidColorBrush x:Key="TextPrimary" Color="#1E293B"/>
+        <SolidColorBrush x:Key="TextSecondary" Color="#64748B"/>
+        <SolidColorBrush x:Key="BorderColor" Color="#E2E8F0"/>
+        <SolidColorBrush x:Key="ErrorColor" Color="#EF4444"/>
+        <SolidColorBrush x:Key="SuccessColor" Color="#10B981"/>
+        <SolidColorBrush x:Key="CardBackground" Color="#FFFFFF"/>
+        <SolidColorBrush x:Key="ShadowColor" Color="#1E3A8A"/>
+        <SolidColorBrush x:Key="LogoBackground" Color="#F8FAFC"/>
+        
+        <!-- Professional Button Style -->
+        <Style x:Key="LoginButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="{StaticResource AccentColor}"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="0,16"/>
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" 
+                                CornerRadius="12" 
+                                Padding="{TemplateBinding Padding}">
+                            <Border.Effect>
+                                <DropShadowEffect Color="#3B82F6" 
+                                                BlurRadius="20" 
+                                                ShadowDepth="0" 
+                                                Opacity="0.3"/>
+                            </Border.Effect>
+                            <ContentPresenter HorizontalAlignment="Center" 
+                                            VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="{StaticResource AccentHover}"/>
+                </Trigger>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Background" Value="#9CA3AF"/>
+                    <Setter Property="Cursor" Value="Arrow"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        
+        <!-- Professional TextBox Style -->
+        <Style x:Key="LoginTextBoxStyle" TargetType="TextBox">
+            <Setter Property="Padding" Value="16,14"/>
+            <Setter Property="FontSize" Value="15"/>
+            <Setter Property="BorderThickness" Value="2"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
+            <Setter Property="Background" Value="{StaticResource CardBackground}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border Background="{TemplateBinding Background}" 
+                                BorderBrush="{TemplateBinding BorderBrush}" 
+                                BorderThickness="{TemplateBinding BorderThickness}" 
+                                CornerRadius="10">
+                            <Border.Effect>
+                                <DropShadowEffect Color="#E2E8F0" 
+                                                BlurRadius="8" 
+                                                ShadowDepth="0" 
+                                                Opacity="0.5"/>
+                            </Border.Effect>
+                            <ScrollViewer x:Name="PART_ContentHost" 
+                                        Margin="{TemplateBinding Padding}"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsFocused" Value="True">
+                    <Setter Property="BorderBrush" Value="{StaticResource AccentColor}"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        
+        <!-- Professional PasswordBox Style -->
+        <Style x:Key="LoginPasswordBoxStyle" TargetType="PasswordBox">
+            <Setter Property="Padding" Value="16,14"/>
+            <Setter Property="FontSize" Value="15"/>
+            <Setter Property="BorderThickness" Value="2"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
+            <Setter Property="Background" Value="{StaticResource CardBackground}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="PasswordBox">
+                        <Border Background="{TemplateBinding Background}" 
+                                BorderBrush="{TemplateBinding BorderBrush}" 
+                                BorderThickness="{TemplateBinding BorderThickness}" 
+                                CornerRadius="10">
+                            <Border.Effect>
+                                <DropShadowEffect Color="#E2E8F0" 
+                                                BlurRadius="8" 
+                                                ShadowDepth="0" 
+                                                Opacity="0.5"/>
+                            </Border.Effect>
+                            <ScrollViewer x:Name="PART_ContentHost" 
+                                        Margin="{TemplateBinding Padding}"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsFocused" Value="True">
+                    <Setter Property="BorderBrush" Value="{StaticResource AccentColor}"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Resources>
+    
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="450"/>
+        </Grid.ColumnDefinitions>
+        
+        <!-- Left Side - Professional Branding -->
+        <Border Grid.Column="0">
+            <Border.Background>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                    <GradientStop Color="#1E3A8A" Offset="0"/>
+                    <GradientStop Color="#1E40AF" Offset="0.5"/>
+                    <GradientStop Color="#3B82F6" Offset="1"/>
+                </LinearGradientBrush>
+            </Border.Background>
+            <Grid>
+                <!-- Background Pattern -->
+                <Canvas>
+                    <Ellipse Width="250" Height="250" Fill="#FFFFFF" Opacity="0.06" 
+                             Canvas.Left="-80" Canvas.Top="80"/>
+                    <Ellipse Width="180" Height="180" Fill="#DBEAFE" Opacity="0.15" 
+                             Canvas.Right="-40" Canvas.Bottom="60"/>
+                    <Ellipse Width="120" Height="120" Fill="#FFFFFF" Opacity="0.08" 
+                             Canvas.Left="60" Canvas.Top="140"/>
+                </Canvas>
+                
+                <!-- Content -->
+                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="60">
+                    <!-- Company Logo -->
+                    <!-- Hama Logo Container -->
+                    <Border Width="160" Height="160" 
+                            CornerRadius="20" 
+                            Margin="0,0,0,25"
+                            Background="White"
+                            BorderBrush="#E2E8F0"
+                            BorderThickness="2">
+                        <Border.Effect>
+                            <DropShadowEffect Color="#000000" 
+                                            BlurRadius="20" 
+                                            ShadowDepth="5" 
+                                            Opacity="0.1"/>
+                        </Border.Effect>
+                        <!-- Hama Company Logo -->
+                        <Image Source="/Resources/hama-logo.png" 
+                               Stretch="Uniform"
+                               Margin="20"/>
+                    </Border>
+                    
+                    <!-- Subtitle -->
+                    <TextBlock Text="Professional Edition" 
+                               Foreground="#DBEAFE" 
+                               FontSize="20" 
+                               FontWeight="SemiBold"
+                               HorizontalAlignment="Center" 
+                               Margin="0,0,0,35"/>
+                    
+                    <!-- Features -->
+                    <StackPanel Margin="0,0,0,40">
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
+                            <Border Background="{StaticResource AccentColor}" 
+                                    CornerRadius="12" Width="24" Height="24" 
+                                    Margin="0,0,15,0">
+                                <TextBlock Text="✓" Foreground="White" 
+                                           HorizontalAlignment="Center" 
+                                           VerticalAlignment="Center" 
+                                           FontWeight="Bold"/>
+                            </Border>
+                            <TextBlock Text="Professionelle Fehlzeitenverwaltung" 
+                                       Foreground="#CBD5E1" 
+                                       FontSize="16" 
+                                       VerticalAlignment="Center"/>
+                        </StackPanel>
+                        
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
+                            <Border Background="{StaticResource AccentColor}" 
+                                    CornerRadius="12" Width="24" Height="24" 
+                                    Margin="0,0,15,0">
+                                <TextBlock Text="✓" Foreground="White" 
+                                           HorizontalAlignment="Center" 
+                                           VerticalAlignment="Center" 
+                                           FontWeight="Bold"/>
+                            </Border>
+                            <TextBlock Text="Sichere Datenverwaltung" 
+                                       Foreground="#CBD5E1" 
+                                       FontSize="16" 
+                                       VerticalAlignment="Center"/>
+                        </StackPanel>
+                        
+                        <StackPanel Orientation="Horizontal">
+                            <Border Background="{StaticResource AccentColor}" 
+                                    CornerRadius="12" Width="24" Height="24" 
+                                    Margin="0,0,15,0">
+                                <TextBlock Text="✓" Foreground="White" 
+                                           HorizontalAlignment="Center" 
+                                           VerticalAlignment="Center" 
+                                           FontWeight="Bold"/>
+                            </Border>
+                            <TextBlock Text="Moderne Benutzeroberfläche" 
+                                       Foreground="#CBD5E1" 
+                                       FontSize="16" 
+                                       VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </StackPanel>
+                    
+                    <!-- Company Info -->
+                    <TextBlock Text="© 2024 Hama Solutions" 
+                               Foreground="#64748B" 
+                               FontSize="14" 
+                               HorizontalAlignment="Center"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+        
+        <!-- Right Side - Professional Login Form -->
+        <Border Grid.Column="1" Background="{StaticResource CardBackground}" Padding="50">
+            <Border.Effect>
+                <DropShadowEffect Color="#1E3A8A" 
+                                BlurRadius="25" 
+                                ShadowDepth="0" 
+                                Opacity="0.08"/>
+            </Border.Effect>
+            
+            <StackPanel VerticalAlignment="Center" MaxWidth="350">
+                <!-- Header Section -->
+                <StackPanel Margin="0,0,0,50">
+                    <TextBlock Text="Willkommen zurück" 
+                               FontSize="32" 
+                               FontWeight="Bold" 
+                               Foreground="{StaticResource TextPrimary}"
+                               HorizontalAlignment="Center" 
+                               Margin="0,0,0,8"/>
+                    <TextBlock Text="Melden Sie sich an, um fortzufahren" 
+                               FontSize="16" 
+                               Foreground="{StaticResource TextSecondary}"
+                               HorizontalAlignment="Center"/>
+                </StackPanel>
+                
+                <!-- Login Form -->
+                <StackPanel>
+                    <!-- Username Field -->
+                    <StackPanel Margin="0,0,0,25">
+                        <TextBlock Text="Benutzername" 
+                                   FontSize="15" 
+                                   FontWeight="SemiBold"
+                                   Foreground="{StaticResource TextPrimary}" 
+                                   Margin="0,0,0,10"/>
+                        <TextBox x:Name="TxtUsername" 
+                                 Style="{StaticResource LoginTextBoxStyle}"
+                                 TabIndex="1"
+                                 Text=""/>
+                    </StackPanel>
+                    
+                    <!-- Password Field -->
+                    <StackPanel Margin="0,0,0,35">
+                        <TextBlock Text="Passwort" 
+                                   FontSize="15" 
+                                   FontWeight="SemiBold"
+                                   Foreground="{StaticResource TextPrimary}" 
+                                   Margin="0,0,0,10"/>
+                        <PasswordBox x:Name="TxtPassword" 
+                                     Style="{StaticResource LoginPasswordBoxStyle}"
+                                     TabIndex="2"/>
+                    </StackPanel>
+                    
+                    <!-- Error Message -->
+                    <Border x:Name="ErrorBorder" 
+                            Background="#FEF2F2" 
+                            BorderBrush="{StaticResource ErrorColor}" 
+                            BorderThickness="1" 
+                            CornerRadius="8" 
+                            Padding="15,12" 
+                            Margin="0,0,0,25"
+                            Visibility="Collapsed">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="⚠" 
+                                       Foreground="{StaticResource ErrorColor}" 
+                                       FontSize="16" 
+                                       Margin="0,0,10,0" 
+                                       VerticalAlignment="Top"/>
+                            <TextBlock x:Name="TxtError" 
+                                       Foreground="{StaticResource ErrorColor}" 
+                                       FontSize="14"
+                                       TextWrapping="Wrap"
+                                       VerticalAlignment="Top"/>
+                        </StackPanel>
+                    </Border>
+                    
+                    <!-- Login Button -->
+                    <Button x:Name="BtnLogin" 
+                            Content="Anmelden" 
+                            Style="{StaticResource LoginButtonStyle}"
+                            HorizontalAlignment="Stretch"
+                            Height="50"
+                            Click="BtnLogin_Click"
+                            TabIndex="3"/>
+                    
+                    <!-- Loading Indicator -->
+                    <StackPanel x:Name="LoadingPanel" 
+                                Orientation="Horizontal" 
+                                HorizontalAlignment="Center"
+                                Margin="0,25,0,0"
+                                Visibility="Collapsed">
+                        <Border Background="{StaticResource AccentColor}" 
+                                CornerRadius="10" 
+                                Width="20" Height="20" 
+                                Margin="0,0,10,0"/>
+                        <TextBlock Text="Anmeldung wird verarbeitet..." 
+                                   Foreground="{StaticResource TextSecondary}" 
+                                   FontSize="14" 
+                                   VerticalAlignment="Center"/>
+                    </StackPanel>
+                </StackPanel>
+                
+                <!-- Footer -->
+                <StackPanel Margin="0,40,0,0" HorizontalAlignment="Center">
+                    <TextBlock Text="Benötigen Sie Hilfe?" 
+                               Foreground="{StaticResource TextSecondary}" 
+                               FontSize="14" 
+                               HorizontalAlignment="Center" 
+                               Margin="0,0,0,5"/>
+                    <TextBlock Text="Kontaktieren Sie den Administrator" 
+                               Foreground="{StaticResource AccentColor}" 
+                               FontSize="14" 
+                               FontWeight="Medium"
+                               HorizontalAlignment="Center" 
+                               Cursor="Hand"/>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>

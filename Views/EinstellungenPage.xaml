@@ -1,0 +1,597 @@
+<UserControl x:Class="FehlzeitApp.Views.EinstellungenPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d"
+             d:DesignHeight="800" d:DesignWidth="1200"
+             Background="#F1F5F9">
+
+    <UserControl.Resources>
+        <!-- Modern Button Styles -->
+        <Style x:Key="PrimaryButton" TargetType="Button">
+            <Setter Property="Background" Value="#3B82F6"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="16,10"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" 
+                                CornerRadius="8" 
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" 
+                                            VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#2563EB"/>
+                </Trigger>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Background" Value="#9CA3AF"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        
+        <Style x:Key="SecondaryButton" TargetType="Button" BasedOn="{StaticResource PrimaryButton}">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="Foreground" Value="#0F172A"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="#E2E8F0"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#F8FAFC"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        
+        <Style x:Key="DangerButton" TargetType="Button" BasedOn="{StaticResource PrimaryButton}">
+            <Setter Property="Background" Value="#EF4444"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#DC2626"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        
+        <Style x:Key="Card" TargetType="Border">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect Color="#000000" Opacity="0.08" ShadowDepth="2" BlurRadius="12"/>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="40" MaxWidth="1000">
+            
+            <!-- Page Header -->
+            <Border Style="{StaticResource Card}" Padding="30" Margin="0,0,0,20">
+                <StackPanel>
+                    <TextBlock Text="⚙️ Einstellungen" FontSize="28" FontWeight="Bold" Foreground="#0F172A"/>
+                    <TextBlock Text="Systemeinstellungen und Datenimport" FontSize="14" Foreground="#64748B" Margin="0,8,0,0"/>
+                </StackPanel>
+            </Border>
+            
+            <!-- TabControl for Import Types -->
+            <TabControl Margin="0,0,0,20" Background="Transparent" BorderThickness="0">
+                <TabControl.Resources>
+                    <!-- Tab Header Style -->
+                    <Style TargetType="TabItem">
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="TabItem">
+                                    <Border Name="Border" Background="White" BorderBrush="#E2E8F0" BorderThickness="1,1,1,0" 
+                                            CornerRadius="8,8,0,0" Padding="20,12" Margin="0,0,4,0">
+                                        <ContentPresenter ContentSource="Header" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsSelected" Value="True">
+                                            <Setter TargetName="Border" Property="Background" Value="#3B82F6"/>
+                                            <Setter Property="Foreground" Value="White"/>
+                                            <Setter Property="FontWeight" Value="SemiBold"/>
+                                        </Trigger>
+                                        <Trigger Property="IsSelected" Value="False">
+                                            <Setter TargetName="Border" Property="Background" Value="White"/>
+                                            <Setter Property="Foreground" Value="#64748B"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </TabControl.Resources>
+                
+                <!-- TAB 1: OBJEKT IMPORT -->
+                <TabItem Header="📊 Objekt Import">
+                    <Border x:Name="ImportSection" Style="{StaticResource Card}" Padding="30">
+                <StackPanel>
+                    <!-- Section Header -->
+                    <Grid Margin="0,0,0,20">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="📊 Objekt Datenimport" FontSize="20" FontWeight="Bold" Foreground="#0F172A"/>
+                            <TextBlock Text="Excel-Datei importieren und Objekte verwalten" FontSize="13" Foreground="#64748B" Margin="0,4,0,0"/>
+                        </StackPanel>
+                        
+                        <Border Grid.Column="1" Background="#FEF3C7" CornerRadius="6" Padding="10,6">
+                            <TextBlock Text="🔒 Nur Admin" FontSize="12" FontWeight="SemiBold" Foreground="#D97706"/>
+                        </Border>
+                    </Grid>
+                    
+                    <!-- File Selection -->
+                    <TextBlock Text="Excel-Datei auswählen" FontWeight="SemiBold" FontSize="14" Margin="0,0,0,10" Foreground="#0F172A"/>
+                    <Grid Margin="0,0,0,20">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        
+                        <Border Grid.Column="0" 
+                                Background="#F8FAFC" 
+                                BorderBrush="#E2E8F0" 
+                                BorderThickness="1" 
+                                CornerRadius="8" 
+                                Padding="16,12">
+                            <TextBlock x:Name="TxtSelectedFile" 
+                                       Text="Keine Datei ausgewählt" 
+                                       FontSize="14" 
+                                       Foreground="#64748B"
+                                       VerticalAlignment="Center"/>
+                        </Border>
+                        
+                        <Button Grid.Column="1" 
+                                x:Name="BtnSelectFile" 
+                                Content="📁 Durchsuchen" 
+                                Style="{StaticResource SecondaryButton}" 
+                                Click="BtnSelectFile_Click"
+                                Margin="12,0,0,0"/>
+                    </Grid>
+                    
+                    <!-- Import Options -->
+                    <Border Background="#FEF2F2" BorderBrush="#FCA5A5" BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,0,0,20">
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                <TextBlock Text="⚠️" FontSize="18" Margin="0,0,8,0"/>
+                                <TextBlock Text="Wichtiger Hinweis" FontSize="14" FontWeight="Bold" Foreground="#DC2626"/>
+                            </StackPanel>
+                            <CheckBox x:Name="ChkClearExisting" 
+                                      FontSize="14" 
+                                      Foreground="#0F172A"
+                                      Margin="0,0,0,8">
+                                <CheckBox.Content>
+                                    <TextBlock>
+                                        <Run Text="Alle bestehenden Objekte löschen" FontWeight="SemiBold"/>
+                                        <LineBreak/>
+                                        <Run Text="Achtung: Diese Aktion kann nicht rückgängig gemacht werden!" FontSize="12" Foreground="#DC2626"/>
+                                    </TextBlock>
+                                </CheckBox.Content>
+                            </CheckBox>
+                        </StackPanel>
+                    </Border>
+                    
+                    <!-- Preview Section -->
+                    <TextBlock Text="Vorschau der Daten" FontWeight="SemiBold" FontSize="14" Margin="0,0,0,10" Foreground="#0F172A"/>
+                    <Border Background="#F8FAFC" 
+                            BorderBrush="#E2E8F0" 
+                            BorderThickness="1" 
+                            CornerRadius="8" 
+                            Padding="16"
+                            Margin="0,0,0,20"
+                            Height="300">
+                        <Grid>
+                            <!-- Empty State -->
+                            <StackPanel x:Name="EmptyState" 
+                                       HorizontalAlignment="Center" 
+                                       VerticalAlignment="Center">
+                                <TextBlock Text="📄" FontSize="48" HorizontalAlignment="Center" Margin="0,0,0,12" Opacity="0.3"/>
+                                <TextBlock Text="Keine Daten geladen" 
+                                          FontSize="16" 
+                                          Foreground="#94A3B8" 
+                                          HorizontalAlignment="Center"/>
+                                <TextBlock Text="Wählen Sie eine Excel-Datei aus" 
+                                          FontSize="13" 
+                                          Foreground="#CBD5E1" 
+                                          HorizontalAlignment="Center"
+                                          Margin="0,4,0,0"/>
+                            </StackPanel>
+                            
+                            <!-- Data Preview Grid -->
+                            <DataGrid x:Name="PreviewDataGrid" 
+                                     AutoGenerateColumns="False" 
+                                     CanUserAddRows="False" 
+                                     CanUserDeleteRows="False"
+                                     IsReadOnly="True"
+                                     GridLinesVisibility="None"
+                                     HeadersVisibility="Column"
+                                     Background="Transparent"
+                                     BorderThickness="0"
+                                     Visibility="Collapsed">
+                                <DataGrid.ColumnHeaderStyle>
+                                    <Style TargetType="DataGridColumnHeader">
+                                        <Setter Property="Background" Value="#F1F5F9"/>
+                                        <Setter Property="Foreground" Value="#64748B"/>
+                                        <Setter Property="FontWeight" Value="SemiBold"/>
+                                        <Setter Property="FontSize" Value="13"/>
+                                        <Setter Property="Padding" Value="12,10"/>
+                                        <Setter Property="BorderThickness" Value="0,0,0,1"/>
+                                        <Setter Property="BorderBrush" Value="#E2E8F0"/>
+                                    </Style>
+                                </DataGrid.ColumnHeaderStyle>
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="objektid (Excel)" Binding="{Binding ExcelObjektId}" Width="120"/>
+                                    <DataGridTextColumn Header="objektname" Binding="{Binding ObjektName}" Width="*"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </Grid>
+                    </Border>
+                    
+                    <!-- Validation Results -->
+                    <Border x:Name="ValidationPanel" 
+                            Background="#DBEAFE" 
+                            BorderBrush="#3B82F6" 
+                            BorderThickness="1" 
+                            CornerRadius="8" 
+                            Padding="16"
+                            Margin="0,0,0,20"
+                            Visibility="Collapsed">
+                        <StackPanel>
+                            <TextBlock x:Name="TxtValidationTitle" 
+                                       Text="✓ Validierung erfolgreich" 
+                                       FontSize="14" 
+                                       FontWeight="Bold" 
+                                       Foreground="#1E40AF"
+                                       Margin="0,0,0,8"/>
+                            <TextBlock x:Name="TxtValidationMessage" 
+                                       Text="Bereit zum Importieren" 
+                                       FontSize="13" 
+                                       Foreground="#1E3A8A"
+                                       TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Border>
+                    
+                    <!-- Action Buttons -->
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        
+                        <TextBlock x:Name="TxtRecordCount" 
+                                   Grid.Column="0"
+                                   Text="0 Objekte geladen" 
+                                   FontSize="14" 
+                                   Foreground="#64748B"
+                                   VerticalAlignment="Center"/>
+                        
+                        <StackPanel Grid.Column="1" Orientation="Horizontal">
+                            <Button x:Name="BtnValidate" 
+                                    Content="✓ Validieren" 
+                                    Style="{StaticResource SecondaryButton}" 
+                                    Click="BtnValidate_Click"
+                                    IsEnabled="False"
+                                    Margin="0,0,12,0"/>
+                            
+                            <Button x:Name="BtnImport" 
+                                    Content="📤 Importieren" 
+                                    Style="{StaticResource PrimaryButton}" 
+                                    Click="BtnImport_Click"
+                                    IsEnabled="False"/>
+                        </StackPanel>
+                    </Grid>
+                </StackPanel>
+                    </Border>
+                </TabItem>
+                
+                <!-- TAB 2: MITARBEITER IMPORT -->
+                <TabItem Header="👥 Mitarbeiter Import">
+                    <Border Style="{StaticResource Card}" Padding="30">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <StackPanel>
+                                <!-- Section Header -->
+                                <Grid Margin="0,0,0,20">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="👥 Mitarbeiter Datenimport" FontSize="20" FontWeight="Bold" Foreground="#0F172A"/>
+                                        <TextBlock Text="Excel-Datei importieren und Mitarbeiter verwalten" FontSize="13" Foreground="#64748B" Margin="0,4,0,0"/>
+                                    </StackPanel>
+                                    
+                                    <Border Grid.Column="1" Background="#FEF3C7" CornerRadius="6" Padding="10,6">
+                                        <TextBlock Text="🔒 Nur Admin" FontSize="12" FontWeight="SemiBold" Foreground="#D97706"/>
+                                    </Border>
+                                </Grid>
+                                
+                                <!-- File Selection -->
+                                <TextBlock Text="Excel-Datei auswählen" FontWeight="SemiBold" FontSize="14" Margin="0,0,0,10" Foreground="#0F172A"/>
+                                <Grid Margin="0,0,0,20">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    
+                                    <Border Grid.Column="0" Background="#F8FAFC" BorderBrush="#E2E8F0" BorderThickness="1" CornerRadius="8" Padding="16,12">
+                                        <TextBlock x:Name="TxtSelectedFile_Mitarbeiter" Text="Keine Datei ausgewählt" FontSize="14" Foreground="#64748B" VerticalAlignment="Center"/>
+                                    </Border>
+                                    
+                                    <Button Grid.Column="1" x:Name="BtnSelectFile_Mitarbeiter" Content="📁 Durchsuchen" 
+                                            Style="{StaticResource SecondaryButton}" Click="BtnSelectFile_Mitarbeiter_Click" Margin="12,0,0,0"/>
+                                </Grid>
+                                
+                                <!-- Import Options -->
+                                <Border Background="#FEF2F2" BorderBrush="#FCA5A5" BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,0,0,20">
+                                    <StackPanel>
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                            <TextBlock Text="⚠️" FontSize="18" Margin="0,0,8,0"/>
+                                            <TextBlock Text="Wichtiger Hinweis" FontSize="14" FontWeight="Bold" Foreground="#DC2626"/>
+                                        </StackPanel>
+                                        <CheckBox x:Name="ChkClearExisting_Mitarbeiter" FontSize="14" Foreground="#0F172A" Margin="0,0,0,8">
+                                            <CheckBox.Content>
+                                                <TextBlock>
+                                                    <Run Text="Alle bestehenden Mitarbeiter löschen" FontWeight="SemiBold"/>
+                                                    <LineBreak/>
+                                                    <Run Text="Achtung: Diese Aktion kann nicht rückgängig gemacht werden!" FontSize="12" Foreground="#DC2626"/>
+                                                </TextBlock>
+                                            </CheckBox.Content>
+                                        </CheckBox>
+                                    </StackPanel>
+                                </Border>
+                                
+                                <!-- Preview Section -->
+                                <TextBlock Text="Vorschau der Daten" FontWeight="SemiBold" FontSize="14" Margin="0,0,0,10" Foreground="#0F172A"/>
+                                <Border Background="#F8FAFC" BorderBrush="#E2E8F0" BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,0,0,20" Height="300">
+                                    <Grid>
+                                        <!-- Empty State -->
+                                        <StackPanel x:Name="EmptyState_Mitarbeiter" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <TextBlock Text="📄" FontSize="48" HorizontalAlignment="Center" Margin="0,0,0,12" Opacity="0.3"/>
+                                            <TextBlock Text="Keine Daten geladen" FontSize="16" Foreground="#94A3B8" HorizontalAlignment="Center"/>
+                                            <TextBlock Text="Wählen Sie eine Excel-Datei aus" FontSize="13" Foreground="#CBD5E1" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                                        </StackPanel>
+                                        
+                                        <!-- Data Preview Grid -->
+                                        <DataGrid x:Name="PreviewDataGrid_Mitarbeiter" 
+                                                 AutoGenerateColumns="False" 
+                                                 CanUserAddRows="False" 
+                                                 CanUserDeleteRows="False"
+                                                 IsReadOnly="True"
+                                                 GridLinesVisibility="None"
+                                                 HeadersVisibility="Column"
+                                                 Background="Transparent"
+                                                 BorderThickness="0"
+                                                 Visibility="Collapsed">
+                                            <DataGrid.ColumnHeaderStyle>
+                                                <Style TargetType="DataGridColumnHeader">
+                                                    <Setter Property="Background" Value="#F1F5F9"/>
+                                                    <Setter Property="Foreground" Value="#64748B"/>
+                                                    <Setter Property="FontWeight" Value="SemiBold"/>
+                                                    <Setter Property="FontSize" Value="13"/>
+                                                    <Setter Property="Padding" Value="12,10"/>
+                                                    <Setter Property="BorderThickness" Value="0,0,0,1"/>
+                                                    <Setter Property="BorderBrush" Value="#E2E8F0"/>
+                                                </Style>
+                                            </DataGrid.ColumnHeaderStyle>
+                                            <DataGrid.Columns>
+                                                <DataGridTextColumn Header="MitarbeiterId" Binding="{Binding MitarbeiterId}" Width="120"/>
+                                                <DataGridTextColumn Header="Personalnummer" Binding="{Binding Personalnummer}" Width="120"/>
+                                                <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="*"/>
+                                                <DataGridTextColumn Header="ObjektId" Binding="{Binding ObjektId}" Width="100"/>
+                                                <DataGridTextColumn Header="Eintritt" Binding="{Binding Eintritt, StringFormat=yyyy-MM-dd}" Width="100"/>
+                                                <DataGridTextColumn Header="Austritt" Binding="{Binding Austritt, StringFormat=yyyy-MM-dd}" Width="100"/>
+                                                <DataGridCheckBoxColumn Header="Aktive" Binding="{Binding Aktive}" Width="80"/>
+                                            </DataGrid.Columns>
+                                        </DataGrid>
+                                    </Grid>
+                                </Border>
+                                
+                                <!-- Validation Results -->
+                                <Border x:Name="ValidationPanel_Mitarbeiter" Background="#DBEAFE" BorderBrush="#3B82F6" BorderThickness="1" 
+                                        CornerRadius="8" Padding="16" Margin="0,0,0,20" Visibility="Collapsed">
+                                    <StackPanel>
+                                        <TextBlock x:Name="TxtValidationTitle_Mitarbeiter" Text="✓ Validierung erfolgreich" 
+                                                   FontSize="14" FontWeight="Bold" Foreground="#1E40AF" Margin="0,0,0,8"/>
+                                        <TextBlock x:Name="TxtValidationMessage_Mitarbeiter" Text="Bereit zum Importieren" 
+                                                   FontSize="13" Foreground="#1E3A8A" TextWrapping="Wrap"/>
+                                    </StackPanel>
+                                </Border>
+                                
+                                <!-- Action Buttons -->
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    
+                                    <TextBlock x:Name="TxtRecordCount_Mitarbeiter" Grid.Column="0" Text="0 Mitarbeiter geladen" 
+                                               FontSize="14" Foreground="#64748B" VerticalAlignment="Center"/>
+                                    
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                        <Button x:Name="BtnValidate_Mitarbeiter" Content="✓ Validieren" 
+                                                Style="{StaticResource SecondaryButton}" Click="BtnValidate_Mitarbeiter_Click"
+                                                IsEnabled="False" Margin="0,0,12,0"/>
+                                        
+                                        <Button x:Name="BtnImport_Mitarbeiter" Content="📤 Importieren" 
+                                                Style="{StaticResource PrimaryButton}" Click="BtnImport_Mitarbeiter_Click"
+                                                IsEnabled="False"/>
+                                    </StackPanel>
+                                </Grid>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </Border>
+                </TabItem>
+                
+                <!-- TAB 3: BENUTZER IMPORT -->
+                <TabItem Header="👤 Benutzer Import">
+                    <Border Style="{StaticResource Card}" Padding="30">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <StackPanel>
+                                <!-- Section Header -->
+                                <Grid Margin="0,0,0,20">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="👤 Benutzer Datenimport" FontSize="20" FontWeight="Bold" Foreground="#0F172A"/>
+                                        <TextBlock Text="Excel-Datei importieren und Benutzer verwalten" FontSize="13" Foreground="#64748B" Margin="0,4,0,0"/>
+                                    </StackPanel>
+                                    
+                                    <Border Grid.Column="1" Background="#FEF3C7" CornerRadius="6" Padding="10,6">
+                                        <TextBlock Text="🔒 Nur Admin" FontSize="12" FontWeight="SemiBold" Foreground="#D97706"/>
+                                    </Border>
+                                </Grid>
+                                
+                                <!-- File Selection -->
+                                <TextBlock Text="Excel-Datei auswählen" FontWeight="SemiBold" FontSize="14" Margin="0,0,0,10" Foreground="#0F172A"/>
+                                <Grid Margin="0,0,0,20">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    
+                                    <Border Grid.Column="0" Background="#F8FAFC" BorderBrush="#E2E8F0" BorderThickness="1" CornerRadius="8" Padding="16,12">
+                                        <TextBlock x:Name="TxtSelectedFile_Benutzer" Text="Keine Datei ausgewählt" FontSize="14" Foreground="#64748B" VerticalAlignment="Center"/>
+                                    </Border>
+                                    
+                                    <Button Grid.Column="1" x:Name="BtnSelectFile_Benutzer" Content="📁 Durchsuchen" 
+                                            Style="{StaticResource SecondaryButton}" Click="BtnSelectFile_Benutzer_Click" Margin="12,0,0,0"/>
+                                </Grid>
+                                
+                                <!-- Import Options -->
+                                <Border Background="#FEF2F2" BorderBrush="#FCA5A5" BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,0,0,20">
+                                    <StackPanel>
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                            <TextBlock Text="⚠️" FontSize="18" Margin="0,0,8,0"/>
+                                            <TextBlock Text="Wichtiger Hinweis" FontSize="14" FontWeight="Bold" Foreground="#DC2626"/>
+                                        </StackPanel>
+                                        <CheckBox x:Name="ChkClearExisting_Benutzer" FontSize="14" Foreground="#0F172A" Margin="0,0,0,8">
+                                            <CheckBox.Content>
+                                                <TextBlock>
+                                                    <Run Text="Alle bestehenden Benutzer löschen" FontWeight="SemiBold"/>
+                                                    <LineBreak/>
+                                                    <Run Text="Achtung: Diese Aktion kann nicht rückgängig gemacht werden!" FontSize="12" Foreground="#DC2626"/>
+                                                </TextBlock>
+                                            </CheckBox.Content>
+                                        </CheckBox>
+                                    </StackPanel>
+                                </Border>
+                                
+                                <!-- Preview Section -->
+                                <TextBlock Text="Vorschau der Daten" FontWeight="SemiBold" FontSize="14" Margin="0,0,0,10" Foreground="#0F172A"/>
+                                <Border Background="#F8FAFC" BorderBrush="#E2E8F0" BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,0,0,20" Height="300">
+                                    <Grid>
+                                        <!-- Empty State -->
+                                        <StackPanel x:Name="EmptyState_Benutzer" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <TextBlock Text="📄" FontSize="48" HorizontalAlignment="Center" Margin="0,0,0,12" Opacity="0.3"/>
+                                            <TextBlock Text="Keine Daten geladen" FontSize="16" Foreground="#94A3B8" HorizontalAlignment="Center"/>
+                                            <TextBlock Text="Wählen Sie eine Excel-Datei aus" FontSize="13" Foreground="#CBD5E1" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                                        </StackPanel>
+                                        
+                                        <!-- Data Preview Grid -->
+                                        <DataGrid x:Name="PreviewDataGrid_Benutzer" 
+                                                 AutoGenerateColumns="False" 
+                                                 CanUserAddRows="False" 
+                                                 CanUserDeleteRows="False"
+                                                 IsReadOnly="True"
+                                                 GridLinesVisibility="None"
+                                                 HeadersVisibility="Column"
+                                                 Background="Transparent"
+                                                 BorderThickness="0"
+                                                 Visibility="Collapsed">
+                                            <DataGrid.ColumnHeaderStyle>
+                                                <Style TargetType="DataGridColumnHeader">
+                                                    <Setter Property="Background" Value="#F1F5F9"/>
+                                                    <Setter Property="Foreground" Value="#64748B"/>
+                                                    <Setter Property="FontWeight" Value="SemiBold"/>
+                                                    <Setter Property="FontSize" Value="13"/>
+                                                    <Setter Property="Padding" Value="12,10"/>
+                                                    <Setter Property="BorderThickness" Value="0,0,0,1"/>
+                                                    <Setter Property="BorderBrush" Value="#E2E8F0"/>
+                                                </Style>
+                                            </DataGrid.ColumnHeaderStyle>
+                                            <DataGrid.Columns>
+                                                <DataGridTextColumn Header="Benutzername" Binding="{Binding Username}" Width="150"/>
+                                                <DataGridTextColumn Header="Email" Binding="{Binding Email}" Width="*"/>
+                                                <DataGridTextColumn Header="Rolle" Binding="{Binding Role}" Width="100"/>
+                                                <DataGridCheckBoxColumn Header="Aktiv" Binding="{Binding IsActive}" Width="80"/>
+                                            </DataGrid.Columns>
+                                        </DataGrid>
+                                    </Grid>
+                                </Border>
+                                
+                                <!-- Validation Results -->
+                                <Border x:Name="ValidationPanel_Benutzer" Background="#DBEAFE" BorderBrush="#3B82F6" BorderThickness="1" 
+                                        CornerRadius="8" Padding="16" Margin="0,0,0,20" Visibility="Collapsed">
+                                    <StackPanel>
+                                        <TextBlock x:Name="TxtValidationTitle_Benutzer" Text="✓ Validierung erfolgreich" 
+                                                   FontSize="14" FontWeight="Bold" Foreground="#1E40AF" Margin="0,0,0,8"/>
+                                        <TextBlock x:Name="TxtValidationMessage_Benutzer" Text="Bereit zum Importieren" 
+                                                   FontSize="13" Foreground="#1E3A8A" TextWrapping="Wrap"/>
+                                    </StackPanel>
+                                </Border>
+                                
+                                <!-- Action Buttons -->
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    
+                                    <TextBlock x:Name="TxtRecordCount_Benutzer" Grid.Column="0" Text="0 Benutzer geladen" 
+                                               FontSize="14" Foreground="#64748B" VerticalAlignment="Center"/>
+                                    
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                        <Button x:Name="BtnValidate_Benutzer" Content="✓ Validieren" 
+                                                Style="{StaticResource SecondaryButton}" Click="BtnValidate_Benutzer_Click"
+                                                IsEnabled="False" Margin="0,0,12,0"/>
+                                        
+                                        <Button x:Name="BtnImport_Benutzer" Content="📤 Importieren" 
+                                                Style="{StaticResource PrimaryButton}" Click="BtnImport_Benutzer_Click"
+                                                IsEnabled="False"/>
+                                    </StackPanel>
+                                </Grid>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </Border>
+                </TabItem>
+            </TabControl>
+            
+            <!-- Import Log Section -->
+            <Border x:Name="LogSection" 
+                    Style="{StaticResource Card}" 
+                    Padding="30" 
+                    Visibility="Collapsed">
+                <StackPanel>
+                    <TextBlock Text="📋 Import-Protokoll" FontSize="18" FontWeight="Bold" Foreground="#0F172A" Margin="0,0,0,16"/>
+                    
+                    <ScrollViewer MaxHeight="200" VerticalScrollBarVisibility="Auto">
+                        <TextBlock x:Name="TxtImportLog" 
+                                   FontFamily="Consolas" 
+                                   FontSize="12" 
+                                   Foreground="#475569"
+                                   TextWrapping="Wrap"
+                                   Background="#F8FAFC"
+                                   Padding="12"/>
+                    </ScrollViewer>
+                </StackPanel>
+            </Border>
+            
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

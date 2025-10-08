@@ -1,0 +1,188 @@
+<Window x:Class="FehlzeitApp.Views.ObjektDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        Title="Objekt bearbeiten" Height="500" Width="600"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        Background="#F1F5F9">
+    
+    <Window.Resources>
+        <!-- Professional Theme Colors -->
+        <SolidColorBrush x:Key="AccentColor" Color="#3B82F6"/>
+        <SolidColorBrush x:Key="TextPrimary" Color="#0F172A"/>
+        <SolidColorBrush x:Key="TextSecondary" Color="#64748B"/>
+        <SolidColorBrush x:Key="BorderColor" Color="#E2E8F0"/>
+        <SolidColorBrush x:Key="CardBackground" Color="#FFFFFF"/>
+        <SolidColorBrush x:Key="ErrorColor" Color="#EF4444"/>
+        
+        <!-- Button Styles -->
+        <Style x:Key="PrimaryButton" TargetType="Button">
+            <Setter Property="Background" Value="{StaticResource AccentColor}"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="20,10"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" 
+                                CornerRadius="6" 
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" 
+                                            VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#2563EB"/>
+                </Trigger>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Background" Value="#9CA3AF"/>
+                    <Setter Property="Cursor" Value="Arrow"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        
+        <Style x:Key="SecondaryButton" TargetType="Button" BasedOn="{StaticResource PrimaryButton}">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#F8FAFC"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Resources>
+    
+    <Border Background="{StaticResource CardBackground}" 
+            CornerRadius="12" 
+            Margin="20"
+            BorderThickness="1"
+            BorderBrush="{StaticResource BorderColor}">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+            
+            <!-- Header -->
+            <Border Grid.Row="0" 
+                    Background="{StaticResource AccentColor}" 
+                    CornerRadius="12,12,0,0"
+                    Padding="30,20">
+                <StackPanel>
+                    <TextBlock x:Name="DialogTitle" 
+                               Text="Neues Objekt erstellen" 
+                               FontSize="20" 
+                               FontWeight="Bold" 
+                               Foreground="White"/>
+                    <TextBlock Text="Geben Sie die Objektinformationen ein" 
+                               FontSize="14" 
+                               Foreground="#BFDBFE" 
+                               Margin="0,5,0,0"/>
+                </StackPanel>
+            </Border>
+            
+            <!-- Form Content -->
+            <ScrollViewer Grid.Row="1" 
+                          VerticalScrollBarVisibility="Auto" 
+                          Padding="30,30,30,20">
+                <StackPanel>
+                    <!-- Name Field -->
+                    <TextBlock Text="Name *" 
+                               FontWeight="SemiBold" 
+                               Foreground="{StaticResource TextPrimary}" 
+                               Margin="0,0,0,8"/>
+                    <TextBox x:Name="TxtName" 
+                             materialDesign:HintAssist.Hint="Objektname eingeben..."
+                             Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                             Margin="0,0,0,20"/>
+                    
+                    <!-- Description Field -->
+                    <TextBlock Text="Beschreibung" 
+                               FontWeight="SemiBold" 
+                               Foreground="{StaticResource TextPrimary}" 
+                               Margin="0,0,0,8"/>
+                    <TextBox x:Name="TxtBeschreibung" 
+                             materialDesign:HintAssist.Hint="Optionale Beschreibung..."
+                             Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                             AcceptsReturn="True"
+                             TextWrapping="Wrap"
+                             MinHeight="80"
+                             MaxHeight="120"
+                             VerticalScrollBarVisibility="Auto"
+                             Margin="0,0,0,20"/>
+                    
+                    <!-- Active Checkbox -->
+                    <CheckBox x:Name="ChkIsActive" 
+                              Content="Objekt ist aktiv" 
+                              IsChecked="True"
+                              Foreground="{StaticResource TextPrimary}"
+                              Margin="0,0,0,20"/>
+                    
+                    <!-- Validation Errors -->
+                    <Border x:Name="ErrorPanel" 
+                            Background="#FEF2F2" 
+                            BorderBrush="{StaticResource ErrorColor}" 
+                            BorderThickness="1" 
+                            CornerRadius="6" 
+                            Padding="15" 
+                            Margin="0,0,0,20"
+                            Visibility="Collapsed">
+                        <StackPanel>
+                            <TextBlock Text="⚠️ Bitte korrigieren Sie folgende Fehler:" 
+                                       FontWeight="SemiBold" 
+                                       Foreground="{StaticResource ErrorColor}" 
+                                       Margin="0,0,0,10"/>
+                            <TextBlock x:Name="ErrorText" 
+                                       Foreground="{StaticResource ErrorColor}" 
+                                       TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+            
+            <!-- Footer Buttons -->
+            <Border Grid.Row="2" 
+                    BorderThickness="0,1,0,0" 
+                    BorderBrush="{StaticResource BorderColor}" 
+                    Padding="30,20">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    
+                    <!-- Info Text -->
+                    <TextBlock Grid.Column="0" 
+                               Text="* Pflichtfelder" 
+                               Foreground="{StaticResource TextSecondary}" 
+                               VerticalAlignment="Center"/>
+                    
+                    <!-- Cancel Button -->
+                    <Button Grid.Column="1" 
+                            Content="Abbrechen" 
+                            Style="{StaticResource SecondaryButton}"
+                            Margin="0,0,15,0"
+                            Click="BtnCancel_Click"/>
+                    
+                    <!-- Save Button -->
+                    <Button Grid.Column="2" 
+                            x:Name="BtnSave"
+                            Content="Speichern" 
+                            Style="{StaticResource PrimaryButton}"
+                            Click="BtnSave_Click"
+                            IsEnabled="False"/>
+                </Grid>
+            </Border>
+        </Grid>
+    </Border>
+</Window>

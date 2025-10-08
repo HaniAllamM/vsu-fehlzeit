@@ -1,0 +1,536 @@
+<UserControl x:Class="FehlzeitApp.Views.UnterlagePage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:converters="clr-namespace:FehlzeitApp.Converters"
+             mc:Ignorable="d"
+             d:DesignHeight="800" d:DesignWidth="1200"
+             Background="#F1F5F9">
+
+    <UserControl.Resources>
+        <converters:BooleanToIsActiveConverter x:Key="BooleanToIsActiveConverter"/>
+        
+        <!-- Modern Button Styles -->
+        <Style x:Key="PrimaryButton" TargetType="Button">
+            <Setter Property="Background" Value="#3B82F6"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="16,8"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" 
+                                CornerRadius="6" 
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" 
+                                            VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#2563EB"/>
+                </Trigger>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Background" Value="#9CA3AF"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        
+        <Style x:Key="SecondaryButton" TargetType="Button" BasedOn="{StaticResource PrimaryButton}">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="Foreground" Value="#0F172A"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="#E2E8F0"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#F8FAFC"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        
+        <Style x:Key="ActionButton" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="8"/>
+            <Setter Property="Margin" Value="2"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" 
+                                CornerRadius="4" 
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" 
+                                            VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#F1F5F9"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        
+        <Style x:Key="Card" TargetType="Border">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect Color="#000000" Opacity="0.1" ShadowDepth="2" BlurRadius="8"/>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="2*"/>
+            <ColumnDefinition Width="10"/>
+            <ColumnDefinition Width="1*"/>
+        </Grid.ColumnDefinitions>
+        
+        <!-- Left Panel - Unterlagen List -->
+        <Border Grid.Column="0" Style="{StaticResource Card}">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                
+                <!-- Header -->
+                <Border Grid.Row="0" Background="White" CornerRadius="8,8,0,0" Padding="20,15" BorderThickness="0,0,0,1" BorderBrush="#E2E8F0">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="Unterlagen Verwaltung" FontSize="18" FontWeight="Bold" Foreground="#0F172A"/>
+                            <TextBlock Text="Verwalten Sie alle Dokumente und Unterlagen" FontSize="12" Foreground="#64748B" Margin="0,2,0,0"/>
+                        </StackPanel>
+                        
+                        <Button Grid.Column="1" x:Name="BtnRefresh" Content="🔄" 
+                                Style="{StaticResource SecondaryButton}" 
+                                Click="BtnRefresh_Click" 
+                                ToolTip="Aktualisieren"/>
+                    </Grid>
+                </Border>
+                
+                <!-- Search and Filter Bar -->
+                <Border Grid.Row="1" Background="White" Padding="20,15" BorderThickness="0,1,0,0" BorderBrush="#E2E8F0">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        
+                        <TextBox x:Name="TxtSearch" 
+                                 Grid.Column="0"
+                                 Text=""
+                                 BorderThickness="1"
+                                 BorderBrush="#E2E8F0"
+                                 Padding="12,8"
+                                 Background="White"
+                                 TextChanged="TxtSearch_TextChanged">
+                            <TextBox.Style>
+                                <Style TargetType="TextBox">
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="TextBox">
+                                                <Border Background="{TemplateBinding Background}"
+                                                        BorderBrush="{TemplateBinding BorderBrush}"
+                                                        BorderThickness="{TemplateBinding BorderThickness}"
+                                                        CornerRadius="6">
+                                                    <Grid>
+                                                        <ScrollViewer x:Name="PART_ContentHost" 
+                                                                      Margin="{TemplateBinding Padding}"
+                                                                      VerticalAlignment="Center"/>
+                                                        <TextBlock Text="Unterlagen durchsuchen..." 
+                                                                   Foreground="#9CA3AF" 
+                                                                   Margin="{TemplateBinding Padding}"
+                                                                   VerticalAlignment="Center"
+                                                                   IsHitTestVisible="False">
+                                                            <TextBlock.Style>
+                                                                <Style TargetType="TextBlock">
+                                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                                    <Style.Triggers>
+                                                                        <DataTrigger Binding="{Binding Text, RelativeSource={RelativeSource TemplatedParent}}" Value="">
+                                                                            <Setter Property="Visibility" Value="Visible"/>
+                                                                        </DataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </TextBlock.Style>
+                                                        </TextBlock>
+                                                    </Grid>
+                                                </Border>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </TextBox.Style>
+                        </TextBox>
+                        
+                        <StackPanel Grid.Column="1" Margin="10,0,0,0">
+                            <TextBlock Text="Standort" FontWeight="Medium" FontSize="12" 
+                                       Foreground="#64748B" Margin="0,0,0,4"/>
+                            <ComboBox x:Name="CmbObjekt" 
+                                      Width="150"
+                                      Height="40"
+                                      Padding="12,8"
+                                      BorderThickness="1"
+                                      BorderBrush="#E2E8F0"
+                                      Background="White"
+                                      SelectionChanged="CmbObjekt_SelectionChanged"/>
+                        </StackPanel>
+                        
+                        <StackPanel Grid.Column="2" Margin="10,0,0,0">
+                            <TextBlock Text="Mitarbeiter" FontWeight="Medium" FontSize="12" 
+                                       Foreground="#64748B" Margin="0,0,0,4"/>
+                            <TextBox x:Name="TxtMitarbeiter" 
+                                     Width="200"
+                                     Height="40" 
+                                     Background="White"
+                                     BorderBrush="#E2E8F0"
+                                     BorderThickness="1"
+                                     Padding="12,10"
+                                     FontSize="14"
+                                     TextChanged="TxtMitarbeiter_TextChanged"/>
+                        </StackPanel>
+                        
+                        <StackPanel Grid.Column="3" Margin="10,0,0,0">
+                            <TextBlock Text="Kategorie" FontWeight="Medium" FontSize="12" 
+                                       Foreground="#64748B" Margin="0,0,0,4"/>
+                            <ComboBox x:Name="CmbKategorie" 
+                                      Width="150"
+                                      Height="40"
+                                      Padding="12,8"
+                                      BorderThickness="1"
+                                      BorderBrush="#E2E8F0"
+                                      Background="White"
+                                      SelectionChanged="CmbKategorie_SelectionChanged"/>
+                        </StackPanel>
+                        
+                        <Button Grid.Column="4" x:Name="BtnLoadData" 
+                                Content="Daten laden" 
+                                Style="{StaticResource PrimaryButton}" 
+                                Click="BtnLoadData_Click" 
+                                Height="40"
+                                MinWidth="100"
+                                Margin="10,0,0,0"
+                                VerticalAlignment="Bottom"/>
+                        
+                        <Button Grid.Column="5" x:Name="BtnAddUnterlage" 
+                                Content="+ Neue Unterlage" 
+                                Style="{StaticResource SecondaryButton}" 
+                                Click="BtnAddUnterlage_Click" 
+                                Height="40"
+                                MinWidth="120"
+                                Margin="10,0,0,0"
+                                VerticalAlignment="Bottom"/>
+                    </Grid>
+                </Border>
+                
+                <!-- Loading Panel -->
+                <StackPanel Grid.Row="2" x:Name="LoadingPanel" VerticalAlignment="Center" HorizontalAlignment="Center" Visibility="Collapsed">
+                    <TextBlock Text="⏳ Lade Unterlagen..." FontSize="16" Foreground="#64748B"/>
+                </StackPanel>
+                
+                <!-- Data Grid -->
+                <DataGrid Grid.Row="2" x:Name="UnterlagenDataGrid" 
+                          ItemsSource="{Binding UnterlagenList}" 
+                          AutoGenerateColumns="False" 
+                          CanUserAddRows="False" 
+                          CanUserDeleteRows="False"
+                          CanUserReorderColumns="False"
+                          CanUserResizeRows="False"
+                          GridLinesVisibility="None"
+                          HeadersVisibility="Column"
+                          SelectionMode="Single"
+                          Background="White"
+                          BorderThickness="0"
+                          RowBackground="White"
+                          AlternatingRowBackground="#F8FAFC"
+                          SelectionChanged="UnterlagenDataGrid_SelectionChanged">
+                    
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Bezeichnung" Binding="{Binding Bezeichnung}" Width="*">
+                            <DataGridTextColumn.HeaderStyle>
+                                <Style TargetType="DataGridColumnHeader">
+                                    <Setter Property="Background" Value="#F1F5F9"/>
+                                    <Setter Property="Foreground" Value="#0F172A"/>
+                                    <Setter Property="FontWeight" Value="SemiBold"/>
+                                    <Setter Property="Padding" Value="12,8"/>
+                                    <Setter Property="BorderThickness" Value="0,0,1,1"/>
+                                    <Setter Property="BorderBrush" Value="#E2E8F0"/>
+                                </Style>
+                            </DataGridTextColumn.HeaderStyle>
+                        </DataGridTextColumn>
+                        
+                        <DataGridTextColumn Header="Dateiname" Binding="{Binding Dateiname}" Width="200">
+                            <DataGridTextColumn.HeaderStyle>
+                                <Style TargetType="DataGridColumnHeader">
+                                    <Setter Property="Background" Value="#F1F5F9"/>
+                                    <Setter Property="Foreground" Value="#0F172A"/>
+                                    <Setter Property="FontWeight" Value="SemiBold"/>
+                                    <Setter Property="Padding" Value="12,8"/>
+                                    <Setter Property="BorderThickness" Value="0,0,1,1"/>
+                                    <Setter Property="BorderBrush" Value="#E2E8F0"/>
+                                </Style>
+                            </DataGridTextColumn.HeaderStyle>
+                        </DataGridTextColumn>
+                        
+                        <DataGridTextColumn Header="Kategorie" Binding="{Binding Kategorie}" Width="120">
+                            <DataGridTextColumn.HeaderStyle>
+                                <Style TargetType="DataGridColumnHeader">
+                                    <Setter Property="Background" Value="#F1F5F9"/>
+                                    <Setter Property="Foreground" Value="#0F172A"/>
+                                    <Setter Property="FontWeight" Value="SemiBold"/>
+                                    <Setter Property="Padding" Value="12,8"/>
+                                    <Setter Property="BorderThickness" Value="0,0,1,1"/>
+                                    <Setter Property="BorderBrush" Value="#E2E8F0"/>
+                                </Style>
+                            </DataGridTextColumn.HeaderStyle>
+                        </DataGridTextColumn>
+                        
+                        <DataGridTextColumn Header="Mitarbeiter" Binding="{Binding MitarbeiterName}" Width="150">
+                            <DataGridTextColumn.HeaderStyle>
+                                <Style TargetType="DataGridColumnHeader">
+                                    <Setter Property="Background" Value="#F1F5F9"/>
+                                    <Setter Property="Foreground" Value="#0F172A"/>
+                                    <Setter Property="FontWeight" Value="SemiBold"/>
+                                    <Setter Property="Padding" Value="12,8"/>
+                                    <Setter Property="BorderThickness" Value="0,0,1,1"/>
+                                    <Setter Property="BorderBrush" Value="#E2E8F0"/>
+                                </Style>
+                            </DataGridTextColumn.HeaderStyle>
+                        </DataGridTextColumn>
+                        
+                        <DataGridTextColumn Header="Gültig ab" Binding="{Binding GueltigAb, StringFormat=dd.MM.yyyy}" Width="100">
+                            <DataGridTextColumn.HeaderStyle>
+                                <Style TargetType="DataGridColumnHeader">
+                                    <Setter Property="Background" Value="#F1F5F9"/>
+                                    <Setter Property="Foreground" Value="#0F172A"/>
+                                    <Setter Property="FontWeight" Value="SemiBold"/>
+                                    <Setter Property="Padding" Value="12,8"/>
+                                    <Setter Property="BorderThickness" Value="0,0,1,1"/>
+                                    <Setter Property="BorderBrush" Value="#E2E8F0"/>
+                                </Style>
+                            </DataGridTextColumn.HeaderStyle>
+                        </DataGridTextColumn>
+                        
+                        <DataGridTemplateColumn Header="Status" Width="80">
+                            <DataGridTemplateColumn.HeaderStyle>
+                                <Style TargetType="DataGridColumnHeader">
+                                    <Setter Property="Background" Value="#F1F5F9"/>
+                                    <Setter Property="Foreground" Value="#0F172A"/>
+                                    <Setter Property="FontWeight" Value="SemiBold"/>
+                                    <Setter Property="Padding" Value="12,8"/>
+                                    <Setter Property="BorderThickness" Value="0,0,1,1"/>
+                                    <Setter Property="BorderBrush" Value="#E2E8F0"/>
+                                </Style>
+                            </DataGridTemplateColumn.HeaderStyle>
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding StatusText}" 
+                                               HorizontalAlignment="Center"
+                                               Foreground="{Binding IstAktiv, Converter={StaticResource BooleanToIsActiveConverter}}"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        
+                        <DataGridTemplateColumn Header="Aktionen" Width="150" x:Name="ActionsColumn">
+                            <DataGridTemplateColumn.HeaderStyle>
+                                <Style TargetType="DataGridColumnHeader">
+                                    <Setter Property="Background" Value="#F1F5F9"/>
+                                    <Setter Property="Foreground" Value="#0F172A"/>
+                                    <Setter Property="FontWeight" Value="SemiBold"/>
+                                    <Setter Property="Padding" Value="12,8"/>
+                                    <Setter Property="BorderThickness" Value="0,0,0,1"/>
+                                    <Setter Property="BorderBrush" Value="#E2E8F0"/>
+                                </Style>
+                            </DataGridTemplateColumn.HeaderStyle>
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                        <Button Content="👁️" Tag="{Binding}" Click="BtnDownload_Click" 
+                                                Style="{StaticResource ActionButton}" 
+                                                ToolTip="Im Browser anzeigen"/>
+                                        <Button Content="✏️" Tag="{Binding}" Click="BtnEdit_Click" 
+                                                Style="{StaticResource ActionButton}" 
+                                                ToolTip="Bearbeiten"/>
+                                        <Button Content="🗑️" Tag="{Binding}" Click="BtnDelete_Click" 
+                                                Style="{StaticResource ActionButton}" 
+                                                ToolTip="Löschen"/>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+                
+                <!-- Pagination -->
+                <Border Grid.Row="3" Background="White" CornerRadius="0,0,8,8" Padding="20,15" BorderThickness="0,1,0,0" BorderBrush="#E2E8F0">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        
+                        <TextBlock Grid.Column="0" x:Name="TxtRecordCount" 
+                                   Text="0 Unterlagen gefunden" 
+                                   VerticalAlignment="Center" 
+                                   Foreground="#64748B"/>
+                        
+                        <StackPanel Grid.Column="1" Orientation="Horizontal">
+                            <Button x:Name="BtnPrevious" Content="← Zurück" 
+                                    Style="{StaticResource SecondaryButton}" 
+                                    Click="BtnPrevious_Click" 
+                                    IsEnabled="False" 
+                                    Margin="0,0,10,0"/>
+                            <Button x:Name="BtnNext" Content="Weiter →" 
+                                    Style="{StaticResource SecondaryButton}" 
+                                    Click="BtnNext_Click" 
+                                    IsEnabled="False"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+            </Grid>
+        </Border>
+        
+        <!-- Right Panel - Details/Form -->
+        <Border Grid.Column="2" Style="{StaticResource Card}">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                
+                <!-- Details Header -->
+                <Border Grid.Row="0" Background="White" CornerRadius="8,8,0,0" Padding="20,15" BorderThickness="0,0,0,1" BorderBrush="#E2E8F0">
+                    <StackPanel>
+                        <TextBlock x:Name="TxtDetailsTitle" Text="Unterlage Details" FontSize="16" FontWeight="Bold" Foreground="#0F172A"/>
+                        <TextBlock Text="Wählen Sie eine Unterlage aus der Liste" FontSize="12" Foreground="#64748B" Margin="0,2,0,0"/>
+                    </StackPanel>
+                </Border>
+                
+                <!-- Details Content -->
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="20">
+                    <StackPanel x:Name="DetailsPanel" Visibility="Collapsed">
+                        <TextBlock Text="Bezeichnung" FontWeight="SemiBold" Margin="0,0,0,5" Foreground="#0F172A"/>
+                        <TextBox x:Name="TxtBezeichnung" 
+                                 Padding="12,8" 
+                                 BorderThickness="1" 
+                                 BorderBrush="#E2E8F0" 
+                                 Background="White" 
+                                 Margin="0,0,0,15"/>
+                        
+                        <TextBlock Text="Kategorie" FontWeight="SemiBold" Margin="0,0,0,5" Foreground="#0F172A"/>
+                        <ComboBox x:Name="CmbDetailsKategorie" 
+                                  Padding="12,8" 
+                                  BorderThickness="1" 
+                                  BorderBrush="#E2E8F0" 
+                                  Background="White" 
+                                  Margin="0,0,0,15"/>
+                        
+                        <TextBlock Text="Standort" FontWeight="SemiBold" Margin="0,0,0,5" Foreground="#0F172A"/>
+                        <ComboBox x:Name="CmbDetailsObjekt" 
+                                  Padding="12,8" 
+                                  BorderThickness="1" 
+                                  BorderBrush="#E2E8F0" 
+                                  Background="White" 
+                                  Margin="0,0,0,15"/>
+                        
+                        <TextBlock Text="Mitarbeiter" FontWeight="SemiBold" Margin="0,0,0,5" Foreground="#0F172A"/>
+                        <ComboBox x:Name="CmbDetailsMitarbeiter" 
+                                  Padding="12,8" 
+                                  BorderThickness="1" 
+                                  BorderBrush="#E2E8F0" 
+                                  Background="White" 
+                                  Margin="0,0,0,15"/>
+                        
+                        <TextBlock Text="Gültig ab" FontWeight="SemiBold" Margin="0,0,0,5" Foreground="#0F172A"/>
+                        <DatePicker x:Name="DpGueltigAb" 
+                                    Padding="12,8" 
+                                    BorderThickness="1" 
+                                    BorderBrush="#E2E8F0" 
+                                    Background="White" 
+                                    Margin="0,0,0,15"/>
+                        
+                        <TextBlock Text="Gültig bis" FontWeight="SemiBold" Margin="0,0,0,5" Foreground="#0F172A"/>
+                        <DatePicker x:Name="DpGueltigBis" 
+                                    Padding="12,8" 
+                                    BorderThickness="1" 
+                                    BorderBrush="#E2E8F0" 
+                                    Background="White" 
+                                    Margin="0,0,0,15"/>
+                        
+                        <CheckBox x:Name="ChkIstAktiv" 
+                                  Content="Aktiv" 
+                                  FontWeight="SemiBold" 
+                                  Foreground="#0F172A" 
+                                  Margin="0,0,0,15"/>
+                        
+                        <TextBlock Text="Datei" FontWeight="SemiBold" Margin="0,0,0,5" Foreground="#0F172A"/>
+                        <Grid Margin="0,0,0,15">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox x:Name="TxtFilePath" 
+                                     Grid.Column="0"
+                                     Padding="12,8" 
+                                     BorderThickness="1" 
+                                     BorderBrush="#E2E8F0" 
+                                     Background="White" 
+                                     IsReadOnly="True"/>
+                            <Button x:Name="BtnSelectFile" 
+                                    Grid.Column="1"
+                                    Content="📁" 
+                                    Style="{StaticResource SecondaryButton}" 
+                                    Click="BtnSelectFile_Click" 
+                                    Margin="5,0,0,0"/>
+                        </Grid>
+                        
+                        <TextBlock x:Name="TxtFileInfo" 
+                                   Text="" 
+                                   FontSize="12" 
+                                   Foreground="#64748B" 
+                                   Margin="0,0,0,15"/>
+                    </StackPanel>
+                </ScrollViewer>
+                
+                <!-- Action Buttons -->
+                <Border Grid.Row="2" Background="White" CornerRadius="0,0,8,8" Padding="20,15" BorderThickness="0,1,0,0" BorderBrush="#E2E8F0">
+                    <StackPanel x:Name="ActionButtonsPanel" Visibility="Collapsed">
+                        <Button x:Name="BtnSave" 
+                                Content="Speichern" 
+                                Style="{StaticResource PrimaryButton}" 
+                                Click="BtnSave_Click" 
+                                Margin="0,0,0,10"/>
+                        <Button x:Name="BtnCancel" 
+                                Content="Abbrechen" 
+                                Style="{StaticResource SecondaryButton}" 
+                                Click="BtnCancel_Click"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>
