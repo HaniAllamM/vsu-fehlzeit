@@ -18,6 +18,24 @@ namespace FehlzeitApp.Services
         {
             try
             {
+                // Check if running from development/publish folder
+                var currentExe = System.AppContext.BaseDirectory;
+                if (string.IsNullOrEmpty(currentExe) || 
+                    currentExe.Contains("\\bin\\Debug\\") || 
+                    currentExe.Contains("\\bin\\Release\\") ||
+                    currentExe.Contains("\\publish\\"))
+                {
+                    MessageBox.Show("⚠️ Update-Funktion nur für installierte Versionen verfügbar!\n\n" +
+                                  "Diese App läuft im Entwicklungsmodus.\n" +
+                                  "Für Updates müssen Sie die installierte Version verwenden:\n" +
+                                  "• Installieren Sie die App über Setup.exe\n" +
+                                  "• Dann können Sie Updates prüfen", 
+                                  "Entwicklungsmodus", 
+                                  MessageBoxButton.OK, 
+                                  MessageBoxImage.Information);
+                    return false;
+                }
+
                 // Set the update feed URL to GitHub releases
                 var mgr = new UpdateManager(_updateUrl);
                 var updateInfo = await mgr.CheckForUpdatesAsync();
@@ -63,8 +81,18 @@ namespace FehlzeitApp.Services
             }
             catch (Exception ex)
             {
-                // Log error but don't block app startup
+                // Log error and show to user
                 System.Diagnostics.Debug.WriteLine($"Update check failed: {ex.Message}");
+                
+                // Show error message to user
+                MessageBox.Show($"Update-Prüfung fehlgeschlagen: {ex.Message}\n\n" +
+                              "Mögliche Ursachen:\n" +
+                              "• App ist nicht über Velopack installiert\n" +
+                              "• Keine Internetverbindung\n" +
+                              "• GitHub Repository nicht erreichbar", 
+                              "Update-Fehler", 
+                              MessageBoxButton.OK, 
+                              MessageBoxImage.Warning);
                 return false;
             }
         }

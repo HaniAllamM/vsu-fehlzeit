@@ -18,6 +18,7 @@
         <SolidColorBrush x:Key="BorderColor" Color="#E2E8F0"/>
         <SolidColorBrush x:Key="CardBackground" Color="#FFFFFF"/>
         <SolidColorBrush x:Key="HoverColor" Color="#F1F5F9"/>
+        <SolidColorBrush x:Key="SuccessColor" Color="#10B981"/>
         
         <!-- Professional Button Style -->
         <Style x:Key="SidebarButtonStyle" TargetType="Button">
