@@ -68,7 +68,7 @@ public partial class App : Application
                             Title = "FehlzeitApp Update",
                             Content = new System.Windows.Controls.TextBlock
                             {
-                                Text = $"Updating to version {updateInfo.TargetFullRelease.Version}...",
+                                Text = $"🔄 Updating to version {updateInfo.TargetFullRelease.Version}...\n✨ New features and improvements!",
                                 Padding = new System.Windows.Thickness(20),
                                 FontSize = 14
                             },
