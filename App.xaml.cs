@@ -56,20 +56,41 @@ public partial class App : Application
 
                 if (updateInfo != null)
                 {
-                    // Show update notification to user
-                    var result = MessageBox.Show(
-                        $"A new version ({updateInfo.TargetFullRelease.Version}) is available!\n\n" +
-                        $"New version: {updateInfo.TargetFullRelease.Version}\n\n" +
-                        "Would you like to update now?",
-                        "Update Available",
-                        MessageBoxButton.YesNo,
-                        MessageBoxImage.Question);
-
-                    if (result == MessageBoxResult.Yes)
+                    // Log the update availability
+                    File.AppendAllText("update.log", $"[{DateTime.Now}] Update available: {updateInfo.TargetFullRelease.Version}\n");
+                    
+                    // Show a brief notification that update is starting (non-blocking)
+                    Application.Current.Dispatcher.Invoke(() =>
                     {
-                        // Automatically apply update
-                        mgr.ApplyUpdatesAndRestart(updateInfo);
-                    }
+                        // Show a toast-like notification for 3 seconds
+                        var notification = new System.Windows.Window
+                        {
+                            Title = "FehlzeitApp Update",
+                            Content = new System.Windows.Controls.TextBlock
+                            {
+                                Text = $"Updating to version {updateInfo.TargetFullRelease.Version}...",
+                                Padding = new System.Windows.Thickness(20),
+                                FontSize = 14
+                            },
+                            Width = 300,
+                            Height = 100,
+                            WindowStyle = System.Windows.WindowStyle.ToolWindow,
+                            ResizeMode = System.Windows.ResizeMode.NoResize,
+                            Topmost = true,
+                            WindowStartupLocation = System.Windows.WindowStartupLocation.CenterScreen
+                        };
+                        notification.Show();
+                        
+                        // Auto-close after 3 seconds
+                        var timer = new System.Windows.Threading.DispatcherTimer();
+                        timer.Interval = TimeSpan.FromSeconds(3);
+                        timer.Tick += (s, e) => { notification.Close(); timer.Stop(); };
+                        timer.Start();
+                    });
+                    
+                    // Automatically apply update without asking user
+                    File.AppendAllText("update.log", $"[{DateTime.Now}] Starting automatic update to version {updateInfo.TargetFullRelease.Version}\n");
+                    mgr.ApplyUpdatesAndRestart(updateInfo);
                 }
             }
             catch (Exception ex)
