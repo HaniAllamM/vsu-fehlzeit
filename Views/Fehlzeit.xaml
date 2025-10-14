@@ -381,9 +381,7 @@
                         <Button Content="Drucken" Click="BtnPrint_Click" Style="{StaticResource SecondaryButton}" 
                                 Height="40" MinWidth="100" Margin="0,0,8,0"/>
                         <Button Content="Drucken (Formatiert)" Click="BtnPrintAdvanced_Click" Style="{StaticResource SecondaryButton}" 
-                                Height="40" MinWidth="140" Margin="0,0,8,0"/>
-                        <Button Content="Vorschau" Click="BtnPrintPreview_Click" Style="{StaticResource SecondaryButton}" 
-                                Height="40" MinWidth="100"/>
+                                Height="40" MinWidth="140"/>
                     </StackPanel>
                 </Grid>
             </Grid>
