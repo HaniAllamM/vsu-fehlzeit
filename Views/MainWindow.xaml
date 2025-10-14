@@ -246,6 +246,19 @@
                     
                     <!-- User Actions -->
                     <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                        <!-- Update Button -->
+                        <Button x:Name="BtnUpdate" 
+                                Content="🔄" 
+                                Width="40" 
+                                Height="40" 
+                                Background="{StaticResource SuccessColor}" 
+                                Foreground="White"
+                                BorderThickness="1" 
+                                BorderBrush="{StaticResource BorderColor}"
+                                ToolTip="Nach Updates suchen"
+                                Margin="0,0,10,0"
+                                Click="BtnUpdate_Click"/>
+                        
                         <!-- Change Password Button -->
                         <Button Content="🔑" 
                                 Width="40" 

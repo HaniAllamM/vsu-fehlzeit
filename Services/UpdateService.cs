@@ -7,7 +7,7 @@ namespace FehlzeitApp.Services
 {
     public class UpdateService
     {
-        private readonly string _updateUrl = "file:///C:/Users/Hani.Allam/Desktop/Updates/FehlzeitApp/";
+        private readonly string _updateUrl = "https://github.com/HaniAllamM/vsu-fehlzeit/releases/latest/download/";
 
         public UpdateService()
         {
@@ -18,9 +18,8 @@ namespace FehlzeitApp.Services
         {
             try
             {
-                // Set the update feed URL to the desktop updates directory
-                var updateUrl = "file:///C:/Users/Hani.Allam/Desktop/Updates/FehlzeitApp/";
-                var mgr = new UpdateManager(updateUrl);
+                // Set the update feed URL to GitHub releases
+                var mgr = new UpdateManager(_updateUrl);
                 var updateInfo = await mgr.CheckForUpdatesAsync();
 
                 if (updateInfo != null)

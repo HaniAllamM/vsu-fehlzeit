@@ -165,6 +165,42 @@ public partial class MainWindow : Window
         UpdatePageTitle("Einstellungen");
     }
 
+    private async void BtnUpdate_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            // Disable button during update check
+            BtnUpdate.IsEnabled = false;
+            BtnUpdate.Content = "⏳";
+            BtnUpdate.ToolTip = "Suche nach Updates...";
+
+            // Create update service and check for updates
+            var updateService = new Services.UpdateService();
+            var hasUpdate = await updateService.CheckForUpdatesAsync();
+
+            if (!hasUpdate)
+            {
+                // Show "no updates" notification
+                MessageBox.Show("✅ Sie haben bereits die neueste Version!", 
+                              "Keine Updates verfügbar", 
+                              MessageBoxButton.OK, 
+                              MessageBoxImage.Information);
+            }
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Fehler beim Überprüfen der Updates: {ex.Message}", 
+                          "Update-Fehler", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+        finally
+        {
+            // Re-enable button
+            BtnUpdate.IsEnabled = true;
+            BtnUpdate.Content = "🔄";
+            BtnUpdate.ToolTip = "Nach Updates suchen";
+        }
+    }
+
     private async void BtnChangePassword_Click(object sender, RoutedEventArgs e)
     {
         try
