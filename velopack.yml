@@ -1,5 +1,5 @@
 appId: "com.haniallam.fehlzeitapp"
-appVersion: "1.1.7"
+appVersion: "1.2.0"
 appName: "FehlzeitApp"
 entryExecutable: "FehlzeitApp.exe"
 publisherName: "Hani Allam"
