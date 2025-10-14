@@ -11,7 +11,9 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using System.Windows.Threading;
 using FehlzeitApp.Services;
+using Microsoft.AspNetCore.SignalR.Client;
 
 namespace FehlzeitApp.Views;
 
@@ -21,6 +23,10 @@ namespace FehlzeitApp.Views;
 public partial class MainWindow : Window
 {
     private readonly AuthService _authService;
+    private HubConnection? _hubConnection;
+    private BenachrichtigungService? _benachrichtigungService;
+    // private UpdateService? _updateService; // Temporarily disabled
+    private bool _isLoggingOut = false;
     
     // Note: Individual page references are no longer needed - NavigationManager handles caching
     // private ObjektPage? _objektPage;
@@ -48,51 +54,39 @@ public partial class MainWindow : Window
         Loaded += MainWindow_Loaded;
     }
 
-    private void MainWindow_Loaded(object sender, RoutedEventArgs e)
+    private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
     {
-        // Initialize immediately without NavigationManager for fastest startup
-        InitializeMainContentDirectly();
+        // Initialize NavigationManager immediately
+        InitializeNavigationManager();
         
-        // Initialize NavigationManager later for navigation functionality
-        Dispatcher.BeginInvoke(new Action(() =>
+        // Initialize services and SignalR
+        await InitializeServicesAsync();
+        await InitializeSignalRAsync();
+        await LoadUnreadCountAsync();
+
+        // Initialize update service and check for updates
+        // await InitializeUpdateServiceAsync(); // Temporarily disabled
+        
+        // Load dashboard after everything is initialized
+        LoadDashboard();
+    }
+    
+    private void InitializeNavigationManager()
+    {
+        try
         {
             var navigationFrame = new Frame();
             MainContentArea.Children.Clear();
             MainContentArea.Children.Add(navigationFrame);
             NavigationManager.Instance.Initialize(navigationFrame);
-            LoadDashboard();
-        }), System.Windows.Threading.DispatcherPriority.ApplicationIdle);
-    }
-    
-    private void InitializeMainContentDirectly()
-    {
-        try
-        {
-            // Clear loading state and show dashboard immediately
-            MainContentArea.Children.Clear();
-            
-            // Create dashboard content directly without NavigationManager
-            var dashboardText = new TextBlock
-            {
-                Text = "Dashboard\n\nWillkommen im Fehlzeit Manager!",
-                FontSize = 18,
-                Foreground = new SolidColorBrush(Colors.Gray),
-                TextAlignment = TextAlignment.Center,
-                VerticalAlignment = VerticalAlignment.Center,
-                HorizontalAlignment = HorizontalAlignment.Center,
-                Margin = new Thickness(20)
-            };
-            
-            MainContentArea.Children.Add(dashboardText);
-            UpdatePageTitle("Dashboard");
         }
         catch (Exception ex)
         {
-            // Fallback to simple text if anything fails
-            System.Diagnostics.Debug.WriteLine($"Error in InitializeMainContentDirectly: {ex.Message}");
+            System.Diagnostics.Debug.WriteLine($"Failed to initialize NavigationManager: {ex.Message}");
+            // Fallback to simple content
             var errorText = new TextBlock
             {
-                Text = "Lade...",
+                Text = "Navigation konnte nicht initialisiert werden",
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Center
             };
@@ -100,6 +94,7 @@ public partial class MainWindow : Window
             MainContentArea.Children.Add(errorText);
         }
     }
+    
 
     private void UpdateUserInfo()
     {
@@ -158,10 +153,40 @@ public partial class MainWindow : Window
         UpdatePageTitle("Unterlagen");
     }
 
+    private void BtnUserObjekt_Click(object sender, RoutedEventArgs e)
+    {
+        LoadUserObjektView();
+        UpdatePageTitle("Benutzer-Projekte");
+    }
+
     private void BtnSettings_Click(object sender, RoutedEventArgs e)
     {
         LoadSettingsView();
         UpdatePageTitle("Einstellungen");
+    }
+
+    private async void BtnChangePassword_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            if (_authService?.CurrentUser == null)
+            {
+                MessageBox.Show("Sie sind nicht angemeldet.", "Fehler", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            // Create UserService to handle password change
+            var configService = await ConfigurationService.CreateAsync();
+            var userService = new UserService(_authService, configService);
+
+            var dialog = new ChangePasswordDialog(userService, _authService.CurrentUser);
+            dialog.ShowDialog();
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Fehler beim Öffnen des Passwort-Dialogs: {ex.Message}", 
+                          "Fehler", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
     }
 
     private void BtnLogout_Click(object sender, RoutedEventArgs e)
@@ -173,17 +198,24 @@ public partial class MainWindow : Window
         
         if (result == MessageBoxResult.Yes)
         {
+            // Set logout flag to prevent app shutdown
+            _isLoggingOut = true;
+            
             // Clear all cached pages before logout
             NavigationManager.Instance.ClearCache();
             
-            // Logout from auth service
+            // Logout from auth service and dispose it
             _authService.Logout();
+            _authService.Dispose();
             
-            // Show login window
+            // Clear the shared auth service reference to force fresh login
+            App.SharedAuthService = null;
+            
+            // Show login window (it will create a fresh AuthService)
             var loginWindow = new LoginWindow();
             loginWindow.Show();
             
-            // Close this window
+            // Close this window (but don't shutdown the app)
             this.Close();
         }
     }
@@ -191,11 +223,47 @@ public partial class MainWindow : Window
 
     private void MainWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
     {
+        // Clean up SignalR connection
+        try
+        {
+            _hubConnection?.StopAsync().Wait();
+            _hubConnection?.DisposeAsync().AsTask().Wait();
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Failed to disconnect SignalR: {ex.Message}");
+        }
+        
         // Clean up resources - NavigationManager handles page cleanup
         NavigationManager.Instance.ClearCache();
 
-        // Stop any running timers or background tasks if needed
-        // This is where you would clean up any resources used by the pages
+        // Clean up BenachrichtigungService
+        try
+        {
+            _benachrichtigungService = null;
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Failed to cleanup BenachrichtigungService: {ex.Message}");
+        }
+
+        // Only shutdown the application if NOT logging out
+        // When logging out, we want to return to login screen, not exit the app
+        if (!_isLoggingOut)
+        {
+            // Clean up AuthService only on full exit
+            try
+            {
+                _authService?.Dispose();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Failed to dispose AuthService: {ex.Message}");
+            }
+            
+            // Force application shutdown only when closing (not logout)
+            Application.Current.Shutdown();
+        }
     }
 
     #endregion
@@ -206,30 +274,14 @@ public partial class MainWindow : Window
     {
         try
         {
-            // Create a minimal dashboard quickly
-            var frame = MainContentArea.Children.OfType<Frame>().FirstOrDefault();
-            if (frame != null)
-            {
-                // Create simple content without complex UserControl
-                var text = new TextBlock
-                {
-                    Text = "Dashboard\n\nWillkommen im Fehlzeit Manager!",
-                    FontSize = 18,
-                    Foreground = new SolidColorBrush(Colors.Gray),
-                    TextAlignment = TextAlignment.Center,
-                    VerticalAlignment = VerticalAlignment.Center,
-                    Margin = new Thickness(20)
-                };
-                
-                frame.Content = text;
-                UpdatePageTitle("Dashboard");
-            }
+            NavigationManager.Instance.NavigateTo<DashboardPage>(_authService);
         }
         catch (Exception ex)
         {
-            // Simplified error handling
-            System.Diagnostics.Debug.WriteLine($"Error loading dashboard: {ex.Message}");
-            UpdatePageTitle("Fehler beim Laden");
+            MessageBox.Show($"Fehler beim Laden des Dashboards: {ex.Message}", 
+                          "Fehler", 
+                          MessageBoxButton.OK, 
+                          MessageBoxImage.Error);
         }
     }
 
@@ -327,6 +379,21 @@ public partial class MainWindow : Window
         }
     }
 
+    private void LoadUserObjektView()
+    {
+        try
+        {
+            NavigationManager.Instance.NavigateTo<UserObjektPage>(_authService);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Fehler beim Laden der Benutzer-Projekte-Seite: {ex.Message}", 
+                          "Fehler", 
+                          MessageBoxButton.OK, 
+                          MessageBoxImage.Error);
+        }
+    }
+
     private void LoadSettingsView()
     {
         try
@@ -360,7 +427,7 @@ public partial class MainWindow : Window
     {
         try
         {
-            var notificationPage = new NotificationPage();
+            var notificationPage = new NotificationPage(_authService);
             
             var frame = MainContentArea.Children.OfType<Frame>().FirstOrDefault();
             if (frame != null)
@@ -415,6 +482,251 @@ public partial class MainWindow : Window
     private void UpdatePageTitle(string title)
     {
         TxtPageTitle.Text = title;
+    }
+
+    #endregion
+    
+    #region Real-Time Notifications with SignalR
+    
+    private async Task InitializeServicesAsync()
+    {
+        try
+        {
+            var configService = await ConfigurationService.CreateAsync();
+            _benachrichtigungService = new BenachrichtigungService(_authService, configService);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Failed to initialize notification service: {ex.Message}");
+        }
+    }
+    
+    private async Task InitializeSignalRAsync()
+    {
+        try
+        {
+            var configService = await ConfigurationService.CreateAsync();
+            var baseUrl = configService.ApiSettings.BaseUrl;
+            var hubUrl = $"{baseUrl}/notificationHub";
+
+            _hubConnection = new HubConnectionBuilder()
+                .WithUrl(hubUrl, options =>
+                {
+                    options.AccessTokenProvider = () => Task.FromResult(_authService.Token);
+                })
+                .WithAutomaticReconnect()
+                .Build();
+
+            // Handle incoming notifications
+            _hubConnection.On<object>("ReceiveNotification", async (notification) =>
+            {
+                System.Diagnostics.Debug.WriteLine($"[SignalR MainWindow] ============ NOTIFICATION RECEIVED ============");
+                System.Diagnostics.Debug.WriteLine($"[SignalR MainWindow] Notification data: {notification}");
+                
+                // Update badge and show popup on UI thread
+                await Dispatcher.InvokeAsync(async () =>
+                {
+                    try
+                    {
+                        // Show popup notification
+                        ShowNotificationPopup("📬 Neue Benachrichtigung", "Eine neue Benachrichtigung ist eingetroffen!");
+                        
+                        // Update unread count badge
+                        await LoadUnreadCountAsync();
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[SignalR MainWindow] Error: {ex.Message}");
+                        MessageBox.Show($"Neue Benachrichtigung empfangen!", "Benachrichtigung", MessageBoxButton.OK, MessageBoxImage.Information);
+                    }
+                });
+            });
+
+            await _hubConnection.StartAsync();
+            System.Diagnostics.Debug.WriteLine("[SignalR MainWindow] Connected successfully!");
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[SignalR MainWindow] Connection failed: {ex.Message}");
+        }
+    }
+    
+    private async Task LoadUnreadCountAsync()
+    {
+        try
+        {
+            if (_benachrichtigungService == null) return;
+            
+            var response = await _benachrichtigungService.GetUnreadCountAsync();
+            
+            if (response.Success && response.Data > 0)
+            {
+                NotificationBadge.Visibility = Visibility.Visible;
+                TxtNotificationCount.Text = response.Data.ToString();
+            }
+            else
+            {
+                NotificationBadge.Visibility = Visibility.Collapsed;
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Failed to load unread count: {ex.Message}");
+        }
+    }
+    
+    private void ShowNotificationPopup(string title, string message)
+    {
+        System.Diagnostics.Debug.WriteLine($"[Popup] ============ CREATING POPUP ============");
+        System.Diagnostics.Debug.WriteLine($"[Popup] Title: {title}");
+        System.Diagnostics.Debug.WriteLine($"[Popup] Message: {message}");
+        
+        try
+        {
+            System.Diagnostics.Debug.WriteLine($"[Popup] Creating window...");
+            
+            // Create a modern notification popup
+            var popup = new Window
+            {
+                Title = "Benachrichtigung",
+                Width = 400,
+                Height = 150,
+                WindowStyle = WindowStyle.None,
+                ResizeMode = ResizeMode.NoResize,
+                WindowStartupLocation = WindowStartupLocation.Manual,
+                ShowInTaskbar = false,
+                Topmost = true,
+                Background = new SolidColorBrush(Color.FromRgb(248, 250, 252)),
+                AllowsTransparency = true
+            };
+            
+            // Position at bottom-right of screen
+            var workingArea = SystemParameters.WorkArea;
+            popup.Left = workingArea.Right - popup.Width - 20;
+            popup.Top = workingArea.Bottom - popup.Height - 20;
+            
+            // Create content
+            var border = new Border
+            {
+                Background = new SolidColorBrush(Colors.White),
+                BorderBrush = new SolidColorBrush(Color.FromRgb(59, 130, 246)),
+                BorderThickness = new Thickness(2),
+                CornerRadius = new CornerRadius(12),
+                Margin = new Thickness(10),
+                Effect = new System.Windows.Media.Effects.DropShadowEffect
+                {
+                    Color = Colors.Gray,
+                    Direction = 270,
+                    ShadowDepth = 3,
+                    BlurRadius = 10,
+                    Opacity = 0.3
+                }
+            };
+            
+            var stackPanel = new StackPanel
+            {
+                Margin = new Thickness(20)
+            };
+            
+            var titleBlock = new TextBlock
+            {
+                Text = title,
+                FontSize = 16,
+                FontWeight = FontWeights.Bold,
+                Foreground = new SolidColorBrush(Color.FromRgb(30, 41, 59)),
+                Margin = new Thickness(0, 0, 0, 8)
+            };
+            
+            var messageBlock = new TextBlock
+            {
+                Text = message,
+                FontSize = 13,
+                Foreground = new SolidColorBrush(Color.FromRgb(100, 116, 139)),
+                TextWrapping = TextWrapping.Wrap
+            };
+            
+            stackPanel.Children.Add(titleBlock);
+            stackPanel.Children.Add(messageBlock);
+            border.Child = stackPanel;
+            popup.Content = border;
+            
+            // Auto-close after 4 seconds
+            var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(4) };
+            timer.Tick += (s, e) =>
+            {
+                timer.Stop();
+                popup.Close();
+            };
+            timer.Start();
+            
+            // Close on click
+            popup.MouseDown += (s, e) => popup.Close();
+            
+            System.Diagnostics.Debug.WriteLine($"[Popup] About to show window...");
+            popup.Show();
+            System.Diagnostics.Debug.WriteLine($"[Popup] ✅ Window shown successfully!");
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[Popup] ❌ ERROR: {ex.Message}");
+            System.Diagnostics.Debug.WriteLine($"[Popup] Stack: {ex.StackTrace}");
+            
+            // Show simple MessageBox as fallback
+            MessageBox.Show($"Neue Benachrichtigung empfangen!\n\n{message}", title, MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+    }
+    
+    #endregion
+
+    #region Update Management
+
+    // Update functionality temporarily disabled
+    /*
+    private async Task InitializeUpdateServiceAsync()
+    {
+        try
+        {
+            _updateService = new UpdateService();
+            await CheckForUpdatesAsync();
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Failed to initialize update service: {ex.Message}");
+        }
+    }
+
+    private async Task CheckForUpdatesAsync()
+    {
+        try
+        {
+            if (_updateService == null) return;
+
+            var updateAvailable = await _updateService.CheckForUpdatesAsync();
+
+            if (updateAvailable)
+            {
+                UpdateBadge.Visibility = Visibility.Visible;
+                TxtUpdateBadge.Text = "!";
+            }
+            else
+            {
+                UpdateBadge.Visibility = Visibility.Collapsed;
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Failed to check for updates: {ex.Message}");
+        }
+    }
+    */
+
+    // Placeholder method for update button (temporarily disabled)
+    private void BtnCheckUpdates_Click(object sender, RoutedEventArgs e)
+    {
+        MessageBox.Show("Update functionality is temporarily disabled.", 
+                        "Information", 
+                        MessageBoxButton.OK, 
+                        MessageBoxImage.Information);
     }
 
     #endregion

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace FehlzeitApp.Models
 {
@@ -47,4 +48,5 @@ namespace FehlzeitApp.Models
         public bool IsAdmin { get; set; }
         public bool MustChangePassword { get; set; }
     }
+
 }

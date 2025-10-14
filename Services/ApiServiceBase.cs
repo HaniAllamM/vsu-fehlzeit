@@ -34,16 +34,17 @@ namespace FehlzeitApp.Services
             try
             {
                 var fullUrl = $"{_baseUrl}/{endpoint}";
-                System.Diagnostics.Debug.WriteLine($"API GET Request: {fullUrl}");
-                System.Diagnostics.Debug.WriteLine($"Auth Header: {_httpClient.DefaultRequestHeaders.Authorization?.ToString() ?? "None"}");
+                Console.WriteLine($"API GET Request: {fullUrl}");
+                Console.WriteLine($"Auth Header: {_httpClient.DefaultRequestHeaders.Authorization}");
+                Console.WriteLine($"Auth Header: {_httpClient.DefaultRequestHeaders.Authorization?.ToString() ?? "None"}");
                 
                 var response = await _httpClient.GetAsync(fullUrl);
                 var content = await response.Content.ReadAsStringAsync();
                 
-                System.Diagnostics.Debug.WriteLine($"API Response Status: {response.StatusCode}");
-                System.Diagnostics.Debug.WriteLine($"========== FULL API RESPONSE ==========" );
-                System.Diagnostics.Debug.WriteLine(content);
-                System.Diagnostics.Debug.WriteLine($"=======================================");
+                Console.WriteLine($"API Response Status: {response.StatusCode}");
+                Console.WriteLine($"========== FULL API RESPONSE ==========" );
+                Console.WriteLine(content);
+                Console.WriteLine($"=======================================");
 
                 if (response.IsSuccessStatusCode)
                 {
@@ -64,7 +65,7 @@ namespace FehlzeitApp.Services
                         {
                             Success = false,
                             Message = $"API Error ({response.StatusCode}): {errorMsg}",
-                            Errors = { content }
+                            Errors = new List<string> { content }
                         };
                     }
                     catch
@@ -73,7 +74,7 @@ namespace FehlzeitApp.Services
                         {
                             Success = false,
                             Message = $"API Error: {response.StatusCode}\n\n{content}",
-                            Errors = { content }
+                            Errors = new List<string> { content }
                         };
                     }
                 }
@@ -84,7 +85,7 @@ namespace FehlzeitApp.Services
                 {
                     Success = false,
                     Message = "Connection error",
-                    Errors = { ex.Message }
+                    Errors = new List<string> { ex.Message }
                 };
             }
         }
@@ -115,11 +116,35 @@ namespace FehlzeitApp.Services
                 else
                 {
                     System.Diagnostics.Debug.WriteLine($"[ApiServiceBase] ERROR: {response.StatusCode}");
+                    
+                    // Try to parse error message from response
+                    string errorMessage = $"API Error: {response.StatusCode}";
+                    try
+                    {
+                        var errorResponse = JsonSerializer.Deserialize<Dictionary<string, object>>(responseContent, GetJsonOptions());
+                        if (errorResponse != null)
+                        {
+                            if (errorResponse.ContainsKey("message"))
+                                errorMessage = errorResponse["message"]?.ToString() ?? errorMessage;
+                            else if (errorResponse.ContainsKey("Message"))
+                                errorMessage = errorResponse["Message"]?.ToString() ?? errorMessage;
+                            else if (errorResponse.ContainsKey("title"))
+                                errorMessage = errorResponse["title"]?.ToString() ?? errorMessage;
+                            else
+                                errorMessage = responseContent; // Show raw response if no standard field found
+                        }
+                    }
+                    catch
+                    {
+                        // If parsing fails, use raw response
+                        errorMessage = responseContent;
+                    }
+                    
                     return new ApiResponse<T> 
                     { 
                         Success = false, 
-                        Message = $"API Error: {response.StatusCode}",
-                        Errors = { responseContent }
+                        Message = errorMessage,
+                        Errors = new List<string> { responseContent }
                     };
                 }
             }
@@ -130,7 +155,7 @@ namespace FehlzeitApp.Services
                 { 
                     Success = false, 
                     Message = "Connection error",
-                    Errors = { ex.Message }
+                    Errors = new List<string> { ex.Message }
                 };
             }
         }
@@ -156,7 +181,7 @@ namespace FehlzeitApp.Services
                     { 
                         Success = false, 
                         Message = $"API Error: {response.StatusCode}",
-                        Errors = { responseContent }
+                        Errors = new List<string> { responseContent }
                     };
                 }
             }
@@ -166,7 +191,7 @@ namespace FehlzeitApp.Services
                 { 
                     Success = false, 
                     Message = "Connection error",
-                    Errors = { ex.Message }
+                    Errors = new List<string> { ex.Message }
                 };
             }
         }
@@ -195,7 +220,7 @@ namespace FehlzeitApp.Services
                     {
                         Success = false,
                         Message = $"API Error: {response.StatusCode}",
-                        Errors = { responseContent }
+                        Errors = new List<string> { responseContent }
                     };
                 }
             }
@@ -205,7 +230,7 @@ namespace FehlzeitApp.Services
                 {
                     Success = false,
                     Message = "Connection error",
-                    Errors = { ex.Message }
+                    Errors = new List<string> { ex.Message }
                 };
             }
         }
@@ -227,7 +252,7 @@ namespace FehlzeitApp.Services
                     { 
                         Success = false, 
                         Message = $"API Error: {response.StatusCode}",
-                        Errors = { content }
+                        Errors = new List<string> { content }
                     };
                 }
             }
@@ -237,7 +262,7 @@ namespace FehlzeitApp.Services
                 { 
                     Success = false, 
                     Message = "Connection error",
-                    Errors = { ex.Message }
+                    Errors = new List<string> { ex.Message }
                 };
             }
         }

@@ -3,23 +3,87 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
              xmlns:converters="clr-namespace:FehlzeitApp.Converters"
              mc:Ignorable="d"
-             d:DesignHeight="800" d:DesignWidth="1200"
-             Background="#F1F5F9">
+             d:DesignHeight="900" d:DesignWidth="1600"
+             Background="#F8F9FA">
 
     <UserControl.Resources>
         <converters:BooleanToIsActiveConverter x:Key="BooleanToIsActiveConverter"/>
         
-        <!-- Modern Button Styles -->
+        <!-- Color Resources -->
+        <SolidColorBrush x:Key="TextMedium" Color="#374151"/>
+        
+        <!-- Modern Professional Button Styles -->
         <Style x:Key="PrimaryButton" TargetType="Button">
-            <Setter Property="Background" Value="#3B82F6"/>
+            <Setter Property="Background" Value="#2563EB"/>
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Padding" Value="16,8"/>
+            <Setter Property="Padding" Value="20,12"/>
             <Setter Property="FontSize" Value="14"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" 
+                                CornerRadius="8" 
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" 
+                                            VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#1D4ED8"/>
+                </Trigger>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Background" Value="#9CA3AF"/>
+                    <Setter Property="Cursor" Value="Arrow"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        
+        <Style x:Key="SecondaryButton" TargetType="Button">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="Foreground" Value="#1F2937"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="#D1D5DB"/>
+            <Setter Property="Padding" Value="16,10"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="Medium"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" 
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="8" 
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" 
+                                            VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#F9FAFB"/>
+                    <Setter Property="BorderBrush" Value="#9CA3AF"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        
+        <Style x:Key="IconButton" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="8"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FontSize" Value="16"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
@@ -34,72 +98,26 @@
             </Setter>
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#2563EB"/>
-                </Trigger>
-                <Trigger Property="IsEnabled" Value="False">
-                    <Setter Property="Background" Value="#9CA3AF"/>
+                    <Setter Property="Background" Value="#F3F4F6"/>
                 </Trigger>
             </Style.Triggers>
-        </Style>
-        
-        <Style x:Key="SecondaryButton" TargetType="Button" BasedOn="{StaticResource PrimaryButton}">
-            <Setter Property="Background" Value="White"/>
-            <Setter Property="Foreground" Value="#0F172A"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="BorderBrush" Value="#E2E8F0"/>
-            <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#F8FAFC"/>
-                </Trigger>
-            </Style.Triggers>
-        </Style>
-        
-        <Style x:Key="ActionButton" TargetType="Button">
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Padding" Value="8"/>
-            <Setter Property="Margin" Value="2"/>
-            <Setter Property="FontSize" Value="14"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}" 
-                                CornerRadius="4" 
-                                Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="Center" 
-                                            VerticalAlignment="Center"/>
-                        </Border>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-            <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#F1F5F9"/>
-                </Trigger>
-            </Style.Triggers>
-        </Style>
-        
-        <Style x:Key="Card" TargetType="Border">
-            <Setter Property="Background" Value="White"/>
-            <Setter Property="CornerRadius" Value="8"/>
-            <Setter Property="Effect">
-                <Setter.Value>
-                    <DropShadowEffect Color="#000000" Opacity="0.1" ShadowDepth="2" BlurRadius="8"/>
-                </Setter.Value>
-            </Setter>
         </Style>
     </UserControl.Resources>
 
     <Grid>
+        <!-- Main Layout: DataGrid on Left, PDF Viewer on Right -->
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="2*"/>
-            <ColumnDefinition Width="10"/>
-            <ColumnDefinition Width="1*"/>
+            <ColumnDefinition Width="2*" MinWidth="600"/>
+            <ColumnDefinition Width="5"/>
+            <ColumnDefinition Width="3*" MinWidth="400"/>
         </Grid.ColumnDefinitions>
         
-        <!-- Left Panel - Unterlagen List -->
-        <Border Grid.Column="0" Style="{StaticResource Card}">
+        <!-- LEFT PANEL: Document List -->
+        <Border Grid.Column="0" Background="White" CornerRadius="12" Margin="20,20,5,20">
+            <Border.Effect>
+                <DropShadowEffect Color="#000000" Opacity="0.08" ShadowDepth="0" BlurRadius="20"/>
+            </Border.Effect>
+            
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
@@ -109,7 +127,7 @@
                 </Grid.RowDefinitions>
                 
                 <!-- Header -->
-                <Border Grid.Row="0" Background="White" CornerRadius="8,8,0,0" Padding="20,15" BorderThickness="0,0,0,1" BorderBrush="#E2E8F0">
+                <Border Grid.Row="0" Background="#F8F9FA" CornerRadius="12,12,0,0" Padding="24,20">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
@@ -117,138 +135,385 @@
                         </Grid.ColumnDefinitions>
                         
                         <StackPanel Grid.Column="0">
-                            <TextBlock Text="Unterlagen Verwaltung" FontSize="18" FontWeight="Bold" Foreground="#0F172A"/>
-                            <TextBlock Text="Verwalten Sie alle Dokumente und Unterlagen" FontSize="12" Foreground="#64748B" Margin="0,2,0,0"/>
+                            <TextBlock Text="📄 Dokumentenverwaltung" FontSize="22" FontWeight="Bold" Foreground="#111827"/>
+                            <TextBlock Text="Verwalten und durchsuchen Sie alle Unterlagen" FontSize="13" Foreground="#6B7280" Margin="0,4,0,0"/>
                         </StackPanel>
                         
-                        <Button Grid.Column="1" x:Name="BtnRefresh" Content="🔄" 
-                                Style="{StaticResource SecondaryButton}" 
-                                Click="BtnRefresh_Click" 
-                                ToolTip="Aktualisieren"/>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                            <Button x:Name="BtnRefresh" Content="🔄" Style="{StaticResource IconButton}" 
+                                    Click="BtnRefresh_Click" ToolTip="Aktualisieren" Margin="0,0,8,0"/>
+                            <Button x:Name="BtnFixObjektIds" Content="🔧 Objekt-IDs reparieren" Style="{StaticResource SecondaryButton}" 
+                                    Click="BtnFixObjektIds_Click" ToolTip="Fehlende Objekt-IDs für bestehende Unterlagen reparieren" Margin="0,0,8,0"/>
+                            <Button x:Name="BtnAddUnterlage" Content="+ Neu" Style="{StaticResource PrimaryButton}" 
+                                    Click="BtnAddUnterlage_Click" Padding="16,8"/>
+                        </StackPanel>
                     </Grid>
                 </Border>
                 
-                <!-- Search and Filter Bar -->
-                <Border Grid.Row="1" Background="White" Padding="20,15" BorderThickness="0,1,0,0" BorderBrush="#E2E8F0">
+                <!-- Filters Section -->
+                <Border Grid.Row="1" Background="White" Padding="24,20" BorderThickness="0,1,0,1" BorderBrush="#E5E7EB">
                     <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="16"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
                         
-                        <TextBox x:Name="TxtSearch" 
-                                 Grid.Column="0"
-                                 Text=""
-                                 BorderThickness="1"
-                                 BorderBrush="#E2E8F0"
-                                 Padding="12,8"
-                                 Background="White"
-                                 TextChanged="TxtSearch_TextChanged">
-                            <TextBox.Style>
-                                <Style TargetType="TextBox">
-                                    <Setter Property="Template">
-                                        <Setter.Value>
-                                            <ControlTemplate TargetType="TextBox">
-                                                <Border Background="{TemplateBinding Background}"
-                                                        BorderBrush="{TemplateBinding BorderBrush}"
-                                                        BorderThickness="{TemplateBinding BorderThickness}"
-                                                        CornerRadius="6">
-                                                    <Grid>
-                                                        <ScrollViewer x:Name="PART_ContentHost" 
-                                                                      Margin="{TemplateBinding Padding}"
-                                                                      VerticalAlignment="Center"/>
-                                                        <TextBlock Text="Unterlagen durchsuchen..." 
-                                                                   Foreground="#9CA3AF" 
-                                                                   Margin="{TemplateBinding Padding}"
-                                                                   VerticalAlignment="Center"
-                                                                   IsHitTestVisible="False">
-                                                            <TextBlock.Style>
-                                                                <Style TargetType="TextBlock">
-                                                                    <Setter Property="Visibility" Value="Collapsed"/>
-                                                                    <Style.Triggers>
-                                                                        <DataTrigger Binding="{Binding Text, RelativeSource={RelativeSource TemplatedParent}}" Value="">
-                                                                            <Setter Property="Visibility" Value="Visible"/>
-                                                                        </DataTrigger>
-                                                                    </Style.Triggers>
-                                                                </Style>
-                                                            </TextBlock.Style>
-                                                        </TextBlock>
-                                                    </Grid>
-                                                </Border>
-                                            </ControlTemplate>
-                                        </Setter.Value>
-                                    </Setter>
-                                </Style>
-                            </TextBox.Style>
-                        </TextBox>
+                        <!-- First Row: Search and Main Filters -->
+                        <Grid Grid.Row="0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="12"/>
+                                <ColumnDefinition Width="220"/>
+                                <ColumnDefinition Width="12"/>
+                                <ColumnDefinition Width="200"/>
+                                <ColumnDefinition Width="12"/>
+                                <ColumnDefinition Width="200"/>
+                            </Grid.ColumnDefinitions>
+                            
+                            <!-- Search Filter -->
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="🔍 Suche" FontWeight="SemiBold" FontSize="13" 
+                                           Foreground="{StaticResource TextMedium}" Margin="0,0,0,8"/>
+                                <TextBox x:Name="TxtSearch" Height="44" Padding="14,0" 
+                                     BorderBrush="#D1D5DB" BorderThickness="1" FontSize="14"
+                                     TextChanged="TxtSearch_TextChanged">
+                                <TextBox.Style>
+                                    <Style TargetType="TextBox">
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="TextBox">
+                                                    <Border Background="White" BorderBrush="{TemplateBinding BorderBrush}"
+                                                            BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="8">
+                                                        <Grid>
+                                                                <TextBlock Text="Dokumente durchsuchen..." Foreground="#9CA3AF" 
+                                                                           Margin="14,0" VerticalAlignment="Center" IsHitTestVisible="False">
+                                                                <TextBlock.Style>
+                                                                    <Style TargetType="TextBlock">
+                                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                                        <Style.Triggers>
+                                                                            <DataTrigger Binding="{Binding Text, RelativeSource={RelativeSource TemplatedParent}}" Value="">
+                                                                                <Setter Property="Visibility" Value="Visible"/>
+                                                                            </DataTrigger>
+                                                                        </Style.Triggers>
+                                                                    </Style>
+                                                                </TextBlock.Style>
+                                                            </TextBlock>
+                                                                <ScrollViewer x:Name="PART_ContentHost" Margin="14,0" VerticalAlignment="Center"/>
+                                                        </Grid>
+                                                    </Border>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                        <Style.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter Property="BorderBrush" Value="#60A5FA"/>
+                                            </Trigger>
+                                            <Trigger Property="IsFocused" Value="True">
+                                                <Setter Property="BorderBrush" Value="#3B82F6"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBox.Style>
+                            </TextBox>
+                            </StackPanel>
+                            
+                            <!-- Standort (Objekt) Filter -->
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Text="🏢 Standort" FontWeight="SemiBold" FontSize="13" 
+                                           Foreground="{StaticResource TextMedium}" Margin="0,0,0,8"/>
+                                <ComboBox x:Name="CmbObjekt" Height="44" Padding="14,0" FontSize="14"
+                                          BorderBrush="#D1D5DB" BorderThickness="1"
+                                          DisplayMemberPath="ObjektName"
+                                          SelectedValuePath="ObjektId"
+                                          SelectionChanged="CmbObjekt_SelectionChanged">
+                                    <ComboBox.Style>
+                                        <Style TargetType="ComboBox">
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="ComboBox">
+                                                        <Grid>
+                                                            <ToggleButton x:Name="ToggleButton" 
+                                                                          Grid.Column="2" 
+                                                                          Focusable="false"
+                                                                          IsChecked="{Binding Path=IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
+                                                                          ClickMode="Press"
+                                                                          Background="White"
+                                                                          BorderBrush="{TemplateBinding BorderBrush}"
+                                                                          BorderThickness="{TemplateBinding BorderThickness}">
+                                                                <ToggleButton.Template>
+                                                                    <ControlTemplate TargetType="ToggleButton">
+                                                                        <Border Background="{TemplateBinding Background}" 
+                                                                                BorderBrush="{TemplateBinding BorderBrush}"
+                                                                                BorderThickness="{TemplateBinding BorderThickness}"
+                                                                                CornerRadius="8">
+                                                                            <Grid>
+                                                                                <Grid.ColumnDefinitions>
+                                                                                    <ColumnDefinition Width="*"/>
+                                                                                    <ColumnDefinition Width="20"/>
+                                                                                </Grid.ColumnDefinitions>
+                                                                                <Path Grid.Column="1" 
+                                                                                      HorizontalAlignment="Center" 
+                                                                                      VerticalAlignment="Center"
+                                                                                      Data="M 0 0 L 4 4 L 8 0 Z"
+                                                                                      Fill="#6B7280"/>
+                                                                            </Grid>
+                                                                        </Border>
+                                                                    </ControlTemplate>
+                                                                </ToggleButton.Template>
+                                                            </ToggleButton>
+                                                            <ContentPresenter x:Name="ContentSite"
+                                                                              IsHitTestVisible="False" 
+                                                                              Content="{TemplateBinding SelectionBoxItem}"
+                                                                              ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                                                              ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"
+                                                                              Margin="14,0,20,0"
+                                                                              VerticalAlignment="Center"
+                                                                              HorizontalAlignment="Left"/>
+                                                            <Popup x:Name="Popup"
+                                                                   Placement="Bottom"
+                                                                   IsOpen="{TemplateBinding IsDropDownOpen}"
+                                                                   AllowsTransparency="True" 
+                                                                   Focusable="False"
+                                                                   PopupAnimation="Slide">
+                                                                <Grid x:Name="DropDown"
+                                                                      SnapsToDevicePixels="True"                
+                                                                      MinWidth="{TemplateBinding ActualWidth}"
+                                                                      MaxHeight="200">
+                                                                    <Border x:Name="DropDownBorder"
+                                                                            Background="White"
+                                                                            BorderThickness="1"
+                                                                            BorderBrush="#D1D5DB"
+                                                                            CornerRadius="8"
+                                                                            Margin="0,4,0,0">
+                                                                        <Border.Effect>
+                                                                            <DropShadowEffect Color="#000000" Opacity="0.1" ShadowDepth="2" BlurRadius="8"/>
+                                                                        </Border.Effect>
+                                                                        <ScrollViewer Margin="4" SnapsToDevicePixels="True">
+                                                                            <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Contained"/>
+                                                                        </ScrollViewer>
+                                                                    </Border>
+                                                                </Grid>
+                                                            </Popup>
+                                                        </Grid>
+                                                        <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter Property="BorderBrush" Value="#60A5FA"/>
+                                                </Trigger>
+                                                <Trigger Property="IsFocused" Value="True">
+                                                    <Setter Property="BorderBrush" Value="#3B82F6"/>
+                                                </Trigger>
+                                                        </ControlTemplate.Triggers>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </Style>
+                                    </ComboBox.Style>
+                                </ComboBox>
+                            </StackPanel>
+
+                            <!-- Kategorie Filter -->
+                            <StackPanel Grid.Column="4">
+                                <TextBlock Text="📁 Kategorie" FontWeight="SemiBold" FontSize="13" 
+                                           Foreground="{StaticResource TextMedium}" Margin="0,0,0,8"/>
+                                <TextBox x:Name="TxtKategorie" Height="44" Padding="14,0" FontSize="14"
+                                         BorderBrush="#D1D5DB" BorderThickness="1"
+                                         TextChanged="TxtKategorie_TextChanged">
+                                    <TextBox.Style>
+                                        <Style TargetType="TextBox">
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="TextBox">
+                                                        <Border Background="White" BorderBrush="{TemplateBinding BorderBrush}"
+                                                                BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="8">
+                                                            <ScrollViewer x:Name="PART_ContentHost" Margin="14,0" VerticalAlignment="Center"/>
+                                                        </Border>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                            <Style.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter Property="BorderBrush" Value="#60A5FA"/>
+                                                </Trigger>
+                                                <Trigger Property="IsFocused" Value="True">
+                                                    <Setter Property="BorderBrush" Value="#3B82F6"/>
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBox.Style>
+                                </TextBox>
+                            </StackPanel>
+
+                            <!-- Mitarbeiter Filter -->
+                            <StackPanel Grid.Column="6">
+                                <TextBlock Text="👤 Mitarbeiter" FontWeight="SemiBold" FontSize="13" 
+                                           Foreground="{StaticResource TextMedium}" Margin="0,0,0,8"/>
+                                <ComboBox x:Name="CmbFilterMitarbeiter" Height="44" Padding="14,0" FontSize="14"
+                                          BorderBrush="#D1D5DB" BorderThickness="1"
+                                          DisplayMemberPath="Name"
+                                          SelectedValuePath="MitarbeiterId"
+                                          SelectionChanged="CmbFilterMitarbeiter_SelectionChanged">
+                                    <ComboBox.Style>
+                                        <Style TargetType="ComboBox">
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="ComboBox">
+                                                        <Grid>
+                                                            <ToggleButton x:Name="ToggleButton" 
+                                                                          Grid.Column="2" 
+                                                                          Focusable="false"
+                                                                          IsChecked="{Binding Path=IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
+                                                                          ClickMode="Press"
+                                                                          Background="White"
+                                                                          BorderBrush="{TemplateBinding BorderBrush}"
+                                                                          BorderThickness="{TemplateBinding BorderThickness}">
+                                                                <ToggleButton.Template>
+                                                                    <ControlTemplate TargetType="ToggleButton">
+                                                                        <Border Background="{TemplateBinding Background}" 
+                                                                                BorderBrush="{TemplateBinding BorderBrush}"
+                                                                                BorderThickness="{TemplateBinding BorderThickness}"
+                                                                                CornerRadius="8">
+                                                                            <Grid>
+                                                                                <Grid.ColumnDefinitions>
+                                                                                    <ColumnDefinition Width="*"/>
+                                                                                    <ColumnDefinition Width="20"/>
+                                                                                </Grid.ColumnDefinitions>
+                                                                                <Path Grid.Column="1" 
+                                                                                      HorizontalAlignment="Center" 
+                                                                                      VerticalAlignment="Center"
+                                                                                      Data="M 0 0 L 4 4 L 8 0 Z"
+                                                                                      Fill="#6B7280"/>
+                                                                            </Grid>
+                                                                        </Border>
+                                                                    </ControlTemplate>
+                                                                </ToggleButton.Template>
+                                                            </ToggleButton>
+                                                            <ContentPresenter x:Name="ContentSite"
+                                                                              IsHitTestVisible="False" 
+                                                                              Content="{TemplateBinding SelectionBoxItem}"
+                                                                              ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                                                              ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"
+                                                                              Margin="14,0,20,0"
+                                                                              VerticalAlignment="Center"
+                                                                              HorizontalAlignment="Left"/>
+                                                            <Popup x:Name="Popup"
+                                                                   Placement="Bottom"
+                                                                   IsOpen="{TemplateBinding IsDropDownOpen}"
+                                                                   AllowsTransparency="True" 
+                                                                   Focusable="False"
+                                                                   PopupAnimation="Slide">
+                                                                <Grid x:Name="DropDown"
+                                                                      SnapsToDevicePixels="True"                
+                                                                      MinWidth="{TemplateBinding ActualWidth}"
+                                                                      MaxHeight="200">
+                                                                    <Border x:Name="DropDownBorder"
+                                                                            Background="White"
+                                                                            BorderThickness="1"
+                                                                            BorderBrush="#D1D5DB"
+                                                                            CornerRadius="8"
+                                                                            Margin="0,4,0,0">
+                                                                        <Border.Effect>
+                                                                            <DropShadowEffect Color="#000000" Opacity="0.1" ShadowDepth="2" BlurRadius="8"/>
+                                                                        </Border.Effect>
+                                                                        <ScrollViewer Margin="4" SnapsToDevicePixels="True">
+                                                                            <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Contained"/>
+                                                                        </ScrollViewer>
+                                                                    </Border>
+                                                                </Grid>
+                                                            </Popup>
+                                                        </Grid>
+                                                        <ControlTemplate.Triggers>
+                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                <Setter Property="BorderBrush" Value="#60A5FA"/>
+                                                            </Trigger>
+                                                            <Trigger Property="IsFocused" Value="True">
+                                                                <Setter Property="BorderBrush" Value="#3B82F6"/>
+                                                            </Trigger>
+                                                        </ControlTemplate.Triggers>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </Style>
+                                    </ComboBox.Style>
+                                </ComboBox>
+                            </StackPanel>
+                        </Grid>
                         
-                        <StackPanel Grid.Column="1" Margin="10,0,0,0">
-                            <TextBlock Text="Standort" FontWeight="Medium" FontSize="12" 
-                                       Foreground="#64748B" Margin="0,0,0,4"/>
-                            <ComboBox x:Name="CmbObjekt" 
-                                      Width="150"
-                                      Height="40"
-                                      Padding="12,8"
-                                      BorderThickness="1"
-                                      BorderBrush="#E2E8F0"
-                                      Background="White"
-                                      SelectionChanged="CmbObjekt_SelectionChanged"/>
-                        </StackPanel>
-                        
-                        <StackPanel Grid.Column="2" Margin="10,0,0,0">
-                            <TextBlock Text="Mitarbeiter" FontWeight="Medium" FontSize="12" 
-                                       Foreground="#64748B" Margin="0,0,0,4"/>
-                            <TextBox x:Name="TxtMitarbeiter" 
-                                     Width="200"
-                                     Height="40" 
-                                     Background="White"
-                                     BorderBrush="#E2E8F0"
-                                     BorderThickness="1"
-                                     Padding="12,10"
-                                     FontSize="14"
-                                     TextChanged="TxtMitarbeiter_TextChanged"/>
-                        </StackPanel>
-                        
-                        <StackPanel Grid.Column="3" Margin="10,0,0,0">
-                            <TextBlock Text="Kategorie" FontWeight="Medium" FontSize="12" 
-                                       Foreground="#64748B" Margin="0,0,0,4"/>
-                            <ComboBox x:Name="CmbKategorie" 
-                                      Width="150"
-                                      Height="40"
-                                      Padding="12,8"
-                                      BorderThickness="1"
-                                      BorderBrush="#E2E8F0"
-                                      Background="White"
-                                      SelectionChanged="CmbKategorie_SelectionChanged"/>
-                        </StackPanel>
-                        
-                        <Button Grid.Column="4" x:Name="BtnLoadData" 
-                                Content="Daten laden" 
-                                Style="{StaticResource PrimaryButton}" 
-                                Click="BtnLoadData_Click" 
-                                Height="40"
-                                MinWidth="100"
-                                Margin="10,0,0,0"
-                                VerticalAlignment="Bottom"/>
-                        
-                        <Button Grid.Column="5" x:Name="BtnAddUnterlage" 
-                                Content="+ Neue Unterlage" 
-                                Style="{StaticResource SecondaryButton}" 
-                                Click="BtnAddUnterlage_Click" 
-                                Height="40"
-                                MinWidth="120"
-                                Margin="10,0,0,0"
-                                VerticalAlignment="Bottom"/>
+                        <!-- Second Row: Date Filters and Actions -->
+                        <Grid Grid.Row="2">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="12"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="12"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="12"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="📅 Von Datum" FontWeight="SemiBold" FontSize="13" 
+                                           Foreground="{StaticResource TextMedium}" Margin="0,0,0,8"/>
+                                <DatePicker x:Name="DpFilterVonDatum" Height="44" Padding="14,0" FontSize="14"
+                                        BorderBrush="#D1D5DB" BorderThickness="1" 
+                                            SelectedDateChanged="DpFilterVonDatum_SelectedDateChanged">
+                                    <DatePicker.Resources>
+                                        <Style TargetType="DatePickerTextBox">
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="DatePickerTextBox">
+                                                        <Border Background="Transparent">
+                                                            <ScrollViewer x:Name="PART_ContentHost" VerticalAlignment="Center"/>
+                                                        </Border>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </Style>
+                                    </DatePicker.Resources>
+                                </DatePicker>
+                            </StackPanel>
+                            
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Text="📅 Bis Datum" FontWeight="SemiBold" FontSize="13" 
+                                           Foreground="{StaticResource TextMedium}" Margin="0,0,0,8"/>
+                                <DatePicker x:Name="DpFilterBisDatum" Height="44" Padding="14,0" FontSize="14"
+                                        BorderBrush="#D1D5DB" BorderThickness="1"
+                                            SelectedDateChanged="DpFilterBisDatum_SelectedDateChanged">
+                                    <DatePicker.Resources>
+                                        <Style TargetType="DatePickerTextBox">
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="DatePickerTextBox">
+                                                        <Border Background="Transparent">
+                                                            <ScrollViewer x:Name="PART_ContentHost" VerticalAlignment="Center"/>
+                                                        </Border>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </Style>
+                                    </DatePicker.Resources>
+                                </DatePicker>
+                            </StackPanel>
+                            
+                            <Button x:Name="BtnLoadData" Grid.Column="4" Content="📊 Laden" 
+                                    Style="{StaticResource PrimaryButton}" Height="44" MinWidth="130"
+                                    Margin="0,28,0,0"
+                                    Click="BtnLoadData_Click"/>
+                            
+                            <Button x:Name="BtnClearFilters" Grid.Column="6" Content="🗑️ Zurücksetzen" 
+                                    Style="{StaticResource SecondaryButton}" Height="44" MinWidth="140"
+                                    Margin="0,28,0,0"
+                                    Click="BtnClearFilters_Click"/>
+                        </Grid>
                     </Grid>
                 </Border>
                 
-                <!-- Loading Panel -->
-                <StackPanel Grid.Row="2" x:Name="LoadingPanel" VerticalAlignment="Center" HorizontalAlignment="Center" Visibility="Collapsed">
-                    <TextBlock Text="⏳ Lade Unterlagen..." FontSize="16" Foreground="#64748B"/>
+                <!-- Loading Indicator -->
+                <StackPanel Grid.Row="2" x:Name="LoadingPanel" VerticalAlignment="Center" 
+                            HorizontalAlignment="Center" Visibility="Collapsed">
+                    <TextBlock Text="⏳" FontSize="48" HorizontalAlignment="Center"/>
+                    <TextBlock Text="Lade Dokumente..." FontSize="16" Foreground="#6B7280" 
+                               HorizontalAlignment="Center" Margin="0,8,0,0"/>
                 </StackPanel>
                 
                 <!-- Data Grid -->
@@ -265,118 +530,173 @@
                           Background="White"
                           BorderThickness="0"
                           RowBackground="White"
-                          AlternatingRowBackground="#F8FAFC"
-                          SelectionChanged="UnterlagenDataGrid_SelectionChanged">
+                          AlternatingRowBackground="#F9FAFB"
+                          SelectionChanged="UnterlagenDataGrid_SelectionChanged"
+                          Margin="0,0,0,0">
+                    
+                    <DataGrid.RowStyle>
+                        <Style TargetType="DataGridRow">
+                            <Setter Property="Height" Value="56"/>
+                            <Setter Property="Cursor" Value="Hand"/>
+                            <Style.Triggers>
+                                <Trigger Property="IsSelected" Value="True">
+                                    <Setter Property="Background" Value="#EEF2FF"/>
+                                    <Setter Property="BorderBrush" Value="#2563EB"/>
+                                </Trigger>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="Background" Value="#F9FAFB"/>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGrid.RowStyle>
                     
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="Bezeichnung" Binding="{Binding Bezeichnung}" Width="*">
+                        <DataGridTextColumn Header="📄 Dokument" Binding="{Binding Bezeichnung}" Width="*" MinWidth="200">
                             <DataGridTextColumn.HeaderStyle>
                                 <Style TargetType="DataGridColumnHeader">
-                                    <Setter Property="Background" Value="#F1F5F9"/>
-                                    <Setter Property="Foreground" Value="#0F172A"/>
+                                    <Setter Property="Background" Value="#F8F9FA"/>
+                                    <Setter Property="Foreground" Value="#111827"/>
                                     <Setter Property="FontWeight" Value="SemiBold"/>
-                                    <Setter Property="Padding" Value="12,8"/>
-                                    <Setter Property="BorderThickness" Value="0,0,1,1"/>
-                                    <Setter Property="BorderBrush" Value="#E2E8F0"/>
+                                    <Setter Property="FontSize" Value="13"/>
+                                    <Setter Property="Padding" Value="16,12"/>
+                                    <Setter Property="BorderThickness" Value="0,0,0,2"/>
+                                    <Setter Property="BorderBrush" Value="#E5E7EB"/>
                                 </Style>
                             </DataGridTextColumn.HeaderStyle>
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Padding" Value="16,0"/>
+                                    <Setter Property="VerticalAlignment" Value="Center"/>
+                                    <Setter Property="FontWeight" Value="Medium"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
                         </DataGridTextColumn>
                         
-                        <DataGridTextColumn Header="Dateiname" Binding="{Binding Dateiname}" Width="200">
+                        <DataGridTextColumn Header="📁 Kategorie" Binding="{Binding Kategorie}" Width="140">
                             <DataGridTextColumn.HeaderStyle>
                                 <Style TargetType="DataGridColumnHeader">
-                                    <Setter Property="Background" Value="#F1F5F9"/>
-                                    <Setter Property="Foreground" Value="#0F172A"/>
+                                    <Setter Property="Background" Value="#F8F9FA"/>
+                                    <Setter Property="Foreground" Value="#111827"/>
                                     <Setter Property="FontWeight" Value="SemiBold"/>
-                                    <Setter Property="Padding" Value="12,8"/>
-                                    <Setter Property="BorderThickness" Value="0,0,1,1"/>
-                                    <Setter Property="BorderBrush" Value="#E2E8F0"/>
+                                    <Setter Property="FontSize" Value="13"/>
+                                    <Setter Property="Padding" Value="16,12"/>
+                                    <Setter Property="BorderThickness" Value="0,0,0,2"/>
+                                    <Setter Property="BorderBrush" Value="#E5E7EB"/>
                                 </Style>
                             </DataGridTextColumn.HeaderStyle>
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Padding" Value="16,0"/>
+                                    <Setter Property="VerticalAlignment" Value="Center"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
                         </DataGridTextColumn>
                         
-                        <DataGridTextColumn Header="Kategorie" Binding="{Binding Kategorie}" Width="120">
+                        <DataGridTextColumn Header="👤 Mitarbeiter" Binding="{Binding MitarbeiterName}" Width="160">
                             <DataGridTextColumn.HeaderStyle>
                                 <Style TargetType="DataGridColumnHeader">
-                                    <Setter Property="Background" Value="#F1F5F9"/>
-                                    <Setter Property="Foreground" Value="#0F172A"/>
+                                    <Setter Property="Background" Value="#F8F9FA"/>
+                                    <Setter Property="Foreground" Value="#111827"/>
                                     <Setter Property="FontWeight" Value="SemiBold"/>
-                                    <Setter Property="Padding" Value="12,8"/>
-                                    <Setter Property="BorderThickness" Value="0,0,1,1"/>
-                                    <Setter Property="BorderBrush" Value="#E2E8F0"/>
+                                    <Setter Property="FontSize" Value="13"/>
+                                    <Setter Property="Padding" Value="16,12"/>
+                                    <Setter Property="BorderThickness" Value="0,0,0,2"/>
+                                    <Setter Property="BorderBrush" Value="#E5E7EB"/>
                                 </Style>
                             </DataGridTextColumn.HeaderStyle>
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Padding" Value="16,0"/>
+                                    <Setter Property="VerticalAlignment" Value="Center"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
                         </DataGridTextColumn>
                         
-                        <DataGridTextColumn Header="Mitarbeiter" Binding="{Binding MitarbeiterName}" Width="150">
+                        <DataGridTextColumn Header="🏢 Standort" Binding="{Binding ObjektName}" Width="140">
                             <DataGridTextColumn.HeaderStyle>
                                 <Style TargetType="DataGridColumnHeader">
-                                    <Setter Property="Background" Value="#F1F5F9"/>
-                                    <Setter Property="Foreground" Value="#0F172A"/>
+                                    <Setter Property="Background" Value="#F8F9FA"/>
+                                    <Setter Property="Foreground" Value="#111827"/>
                                     <Setter Property="FontWeight" Value="SemiBold"/>
-                                    <Setter Property="Padding" Value="12,8"/>
-                                    <Setter Property="BorderThickness" Value="0,0,1,1"/>
-                                    <Setter Property="BorderBrush" Value="#E2E8F0"/>
+                                    <Setter Property="FontSize" Value="13"/>
+                                    <Setter Property="Padding" Value="16,12"/>
+                                    <Setter Property="BorderThickness" Value="0,0,0,2"/>
+                                    <Setter Property="BorderBrush" Value="#E5E7EB"/>
                                 </Style>
                             </DataGridTextColumn.HeaderStyle>
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Padding" Value="16,0"/>
+                                    <Setter Property="VerticalAlignment" Value="Center"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
                         </DataGridTextColumn>
                         
-                        <DataGridTextColumn Header="Gültig ab" Binding="{Binding GueltigAb, StringFormat=dd.MM.yyyy}" Width="100">
+                        <DataGridTextColumn Header="📅 Gültig ab" Binding="{Binding GueltigAb, StringFormat=dd.MM.yyyy}" Width="110">
                             <DataGridTextColumn.HeaderStyle>
                                 <Style TargetType="DataGridColumnHeader">
-                                    <Setter Property="Background" Value="#F1F5F9"/>
-                                    <Setter Property="Foreground" Value="#0F172A"/>
+                                    <Setter Property="Background" Value="#F8F9FA"/>
+                                    <Setter Property="Foreground" Value="#111827"/>
                                     <Setter Property="FontWeight" Value="SemiBold"/>
-                                    <Setter Property="Padding" Value="12,8"/>
-                                    <Setter Property="BorderThickness" Value="0,0,1,1"/>
-                                    <Setter Property="BorderBrush" Value="#E2E8F0"/>
+                                    <Setter Property="FontSize" Value="13"/>
+                                    <Setter Property="Padding" Value="16,12"/>
+                                    <Setter Property="BorderThickness" Value="0,0,0,2"/>
+                                    <Setter Property="BorderBrush" Value="#E5E7EB"/>
                                 </Style>
                             </DataGridTextColumn.HeaderStyle>
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Padding" Value="16,0"/>
+                                    <Setter Property="VerticalAlignment" Value="Center"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
                         </DataGridTextColumn>
                         
-                        <DataGridTemplateColumn Header="Status" Width="80">
+                        <DataGridTemplateColumn Header="⚡ Status" Width="90">
                             <DataGridTemplateColumn.HeaderStyle>
                                 <Style TargetType="DataGridColumnHeader">
-                                    <Setter Property="Background" Value="#F1F5F9"/>
-                                    <Setter Property="Foreground" Value="#0F172A"/>
+                                    <Setter Property="Background" Value="#F8F9FA"/>
+                                    <Setter Property="Foreground" Value="#111827"/>
                                     <Setter Property="FontWeight" Value="SemiBold"/>
-                                    <Setter Property="Padding" Value="12,8"/>
-                                    <Setter Property="BorderThickness" Value="0,0,1,1"/>
-                                    <Setter Property="BorderBrush" Value="#E2E8F0"/>
+                                    <Setter Property="FontSize" Value="13"/>
+                                    <Setter Property="Padding" Value="16,12"/>
+                                    <Setter Property="BorderThickness" Value="0,0,0,2"/>
+                                    <Setter Property="BorderBrush" Value="#E5E7EB"/>
                                 </Style>
                             </DataGridTemplateColumn.HeaderStyle>
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <TextBlock Text="{Binding StatusText}" 
-                                               HorizontalAlignment="Center"
-                                               Foreground="{Binding IstAktiv, Converter={StaticResource BooleanToIsActiveConverter}}"/>
+                                    <Border Background="{Binding IstAktiv, Converter={StaticResource BooleanToIsActiveConverter}}" 
+                                            CornerRadius="12" Padding="8,4" HorizontalAlignment="Center">
+                                        <TextBlock Text="{Binding StatusText}" FontSize="11" FontWeight="SemiBold" 
+                                                   Foreground="White"/>
+                                    </Border>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
                         
-                        <DataGridTemplateColumn Header="Aktionen" Width="150" x:Name="ActionsColumn">
+                        <DataGridTemplateColumn Header="Aktionen" Width="120">
                             <DataGridTemplateColumn.HeaderStyle>
                                 <Style TargetType="DataGridColumnHeader">
-                                    <Setter Property="Background" Value="#F1F5F9"/>
-                                    <Setter Property="Foreground" Value="#0F172A"/>
+                                    <Setter Property="Background" Value="#F8F9FA"/>
+                                    <Setter Property="Foreground" Value="#111827"/>
                                     <Setter Property="FontWeight" Value="SemiBold"/>
-                                    <Setter Property="Padding" Value="12,8"/>
-                                    <Setter Property="BorderThickness" Value="0,0,0,1"/>
-                                    <Setter Property="BorderBrush" Value="#E2E8F0"/>
+                                    <Setter Property="FontSize" Value="13"/>
+                                    <Setter Property="Padding" Value="16,12"/>
+                                    <Setter Property="BorderThickness" Value="0,0,0,2"/>
+                                    <Setter Property="BorderBrush" Value="#E5E7EB"/>
+                                    <Setter Property="HorizontalContentAlignment" Value="Center"/>
                                 </Style>
                             </DataGridTemplateColumn.HeaderStyle>
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                        <Button Content="👁️" Tag="{Binding}" Click="BtnDownload_Click" 
-                                                Style="{StaticResource ActionButton}" 
-                                                ToolTip="Im Browser anzeigen"/>
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="8,0">
                                         <Button Content="✏️" Tag="{Binding}" Click="BtnEdit_Click" 
-                                                Style="{StaticResource ActionButton}" 
-                                                ToolTip="Bearbeiten"/>
+                                                Style="{StaticResource IconButton}" ToolTip="Bearbeiten" 
+                                                Width="32" Height="32"/>
                                         <Button Content="🗑️" Tag="{Binding}" Click="BtnDelete_Click" 
-                                                Style="{StaticResource ActionButton}" 
-                                                ToolTip="Löschen"/>
+                                                Style="{StaticResource IconButton}" ToolTip="Löschen" 
+                                                Width="32" Height="32" Margin="8,0,0,0"/>
                                     </StackPanel>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
@@ -384,153 +704,204 @@
                     </DataGrid.Columns>
                 </DataGrid>
                 
-                <!-- Pagination -->
-                <Border Grid.Row="3" Background="White" CornerRadius="0,0,8,8" Padding="20,15" BorderThickness="0,1,0,0" BorderBrush="#E2E8F0">
+                <!-- Footer -->
+                <Border Grid.Row="3" Background="#F8F9FA" CornerRadius="0,0,12,12" Padding="24,16" 
+                        BorderThickness="0,1,0,0" BorderBrush="#E5E7EB">
+                    <TextBlock x:Name="TxtRecordCount" Text="0 Dokumente" FontSize="13" 
+                               Foreground="#6B7280" FontWeight="Medium"/>
+                </Border>
+            </Grid>
+        </Border>
+        
+        <!-- Splitter -->
+        <GridSplitter Grid.Column="1" Width="5" Background="Transparent" 
+                      HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+        
+        <!-- RIGHT PANEL: PDF Viewer -->
+        <Border Grid.Column="2" Background="White" CornerRadius="12" Margin="5,20,20,20">
+            <Border.Effect>
+                <DropShadowEffect Color="#000000" Opacity="0.08" ShadowDepth="0" BlurRadius="20"/>
+            </Border.Effect>
+            
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                
+                <!-- PDF Viewer Header -->
+                <Border Grid.Row="0" Background="#F8F9FA" CornerRadius="12,12,0,0" Padding="24,20" 
+                        BorderThickness="0,0,0,1" BorderBrush="#E5E7EB">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         
-                        <TextBlock Grid.Column="0" x:Name="TxtRecordCount" 
-                                   Text="0 Unterlagen gefunden" 
-                                   VerticalAlignment="Center" 
-                                   Foreground="#64748B"/>
-                        
-                        <StackPanel Grid.Column="1" Orientation="Horizontal">
-                            <Button x:Name="BtnPrevious" Content="← Zurück" 
-                                    Style="{StaticResource SecondaryButton}" 
-                                    Click="BtnPrevious_Click" 
-                                    IsEnabled="False" 
-                                    Margin="0,0,10,0"/>
-                            <Button x:Name="BtnNext" Content="Weiter →" 
-                                    Style="{StaticResource SecondaryButton}" 
-                                    Click="BtnNext_Click" 
-                                    IsEnabled="False"/>
+                        <StackPanel Grid.Column="0">
+                            <TextBlock x:Name="TxtPdfTitle" Text="📑 Dokumentenvorschau" 
+                                       FontSize="18" FontWeight="Bold" Foreground="#111827"/>
+                            <TextBlock x:Name="TxtPdfSubtitle" Text="Wählen Sie ein Dokument aus der Liste" 
+                                       FontSize="13" Foreground="#6B7280" Margin="0,4,0,0"/>
                         </StackPanel>
+                        
+                        <Button x:Name="BtnDownloadPdf" Grid.Column="1" Content="⬇️ Download" 
+                                Style="{StaticResource SecondaryButton}" Padding="12,8"
+                                Click="BtnDownloadPdf_Click" Visibility="Collapsed"/>
                     </Grid>
                 </Border>
+                
+                <!-- PDF Viewer Content -->
+                <Grid Grid.Row="1">
+                    <!-- PDF WebView - Highest Z-Index -->
+                    <wv2:WebView2 x:Name="PdfWebView" Visibility="Collapsed" Panel.ZIndex="10"/>
+                    
+                    <!-- Loading State -->
+                    <StackPanel x:Name="PdfLoadingPanel" VerticalAlignment="Center" HorizontalAlignment="Center" 
+                                Visibility="Collapsed" Panel.ZIndex="5">
+                        <TextBlock Text="⏳" FontSize="48" HorizontalAlignment="Center"/>
+                        <TextBlock Text="Dokument wird geladen..." FontSize="16" Foreground="#6B7280" 
+                                   HorizontalAlignment="Center" Margin="0,8,0,0"/>
+                    </StackPanel>
+                    
+                    <!-- Empty State - Lowest Z-Index -->
+                    <StackPanel x:Name="EmptyStatePanel" VerticalAlignment="Center" HorizontalAlignment="Center" 
+                                Visibility="Visible" Panel.ZIndex="1">
+                        <TextBlock Text="📄" FontSize="72" HorizontalAlignment="Center" Opacity="0.3"/>
+                        <TextBlock Text="Kein Dokument ausgewählt" FontSize="18" FontWeight="SemiBold" 
+                                   Foreground="#6B7280" HorizontalAlignment="Center" Margin="0,16,0,0"/>
+                        <TextBlock Text="Wählen Sie ein Dokument aus der Liste,&#x0a;um es hier anzuzeigen" 
+                                   FontSize="14" Foreground="#9CA3AF" TextAlignment="Center"
+                                   HorizontalAlignment="Center" Margin="0,8,0,0"/>
+                    </StackPanel>
+                </Grid>
             </Grid>
         </Border>
         
-        <!-- Right Panel - Details/Form -->
-        <Border Grid.Column="2" Style="{StaticResource Card}">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
+        <!-- ADD/EDIT POPUP DIALOG -->
+        <Border x:Name="PopupOverlay" Grid.ColumnSpan="3" Background="#80000000" 
+                Visibility="Collapsed" Panel.ZIndex="1000">
+            <Border Background="White" CornerRadius="16" MaxWidth="600" MaxHeight="700" 
+                    VerticalAlignment="Center" HorizontalAlignment="Center" Margin="40">
+                <Border.Effect>
+                    <DropShadowEffect Color="#000000" Opacity="0.3" ShadowDepth="0" BlurRadius="40"/>
+                </Border.Effect>
                 
-                <!-- Details Header -->
-                <Border Grid.Row="0" Background="White" CornerRadius="8,8,0,0" Padding="20,15" BorderThickness="0,0,0,1" BorderBrush="#E2E8F0">
-                    <StackPanel>
-                        <TextBlock x:Name="TxtDetailsTitle" Text="Unterlage Details" FontSize="16" FontWeight="Bold" Foreground="#0F172A"/>
-                        <TextBlock Text="Wählen Sie eine Unterlage aus der Liste" FontSize="12" Foreground="#64748B" Margin="0,2,0,0"/>
-                    </StackPanel>
-                </Border>
-                
-                <!-- Details Content -->
-                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="20">
-                    <StackPanel x:Name="DetailsPanel" Visibility="Collapsed">
-                        <TextBlock Text="Bezeichnung" FontWeight="SemiBold" Margin="0,0,0,5" Foreground="#0F172A"/>
-                        <TextBox x:Name="TxtBezeichnung" 
-                                 Padding="12,8" 
-                                 BorderThickness="1" 
-                                 BorderBrush="#E2E8F0" 
-                                 Background="White" 
-                                 Margin="0,0,0,15"/>
-                        
-                        <TextBlock Text="Kategorie" FontWeight="SemiBold" Margin="0,0,0,5" Foreground="#0F172A"/>
-                        <ComboBox x:Name="CmbDetailsKategorie" 
-                                  Padding="12,8" 
-                                  BorderThickness="1" 
-                                  BorderBrush="#E2E8F0" 
-                                  Background="White" 
-                                  Margin="0,0,0,15"/>
-                        
-                        <TextBlock Text="Standort" FontWeight="SemiBold" Margin="0,0,0,5" Foreground="#0F172A"/>
-                        <ComboBox x:Name="CmbDetailsObjekt" 
-                                  Padding="12,8" 
-                                  BorderThickness="1" 
-                                  BorderBrush="#E2E8F0" 
-                                  Background="White" 
-                                  Margin="0,0,0,15"/>
-                        
-                        <TextBlock Text="Mitarbeiter" FontWeight="SemiBold" Margin="0,0,0,5" Foreground="#0F172A"/>
-                        <ComboBox x:Name="CmbDetailsMitarbeiter" 
-                                  Padding="12,8" 
-                                  BorderThickness="1" 
-                                  BorderBrush="#E2E8F0" 
-                                  Background="White" 
-                                  Margin="0,0,0,15"/>
-                        
-                        <TextBlock Text="Gültig ab" FontWeight="SemiBold" Margin="0,0,0,5" Foreground="#0F172A"/>
-                        <DatePicker x:Name="DpGueltigAb" 
-                                    Padding="12,8" 
-                                    BorderThickness="1" 
-                                    BorderBrush="#E2E8F0" 
-                                    Background="White" 
-                                    Margin="0,0,0,15"/>
-                        
-                        <TextBlock Text="Gültig bis" FontWeight="SemiBold" Margin="0,0,0,5" Foreground="#0F172A"/>
-                        <DatePicker x:Name="DpGueltigBis" 
-                                    Padding="12,8" 
-                                    BorderThickness="1" 
-                                    BorderBrush="#E2E8F0" 
-                                    Background="White" 
-                                    Margin="0,0,0,15"/>
-                        
-                        <CheckBox x:Name="ChkIstAktiv" 
-                                  Content="Aktiv" 
-                                  FontWeight="SemiBold" 
-                                  Foreground="#0F172A" 
-                                  Margin="0,0,0,15"/>
-                        
-                        <TextBlock Text="Datei" FontWeight="SemiBold" Margin="0,0,0,5" Foreground="#0F172A"/>
-                        <Grid Margin="0,0,0,15">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    
+                    <!-- Popup Header -->
+                    <Border Grid.Row="0" Background="#2563EB" CornerRadius="16,16,0,0" Padding="24,20">
+                        <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
-                            <TextBox x:Name="TxtFilePath" 
-                                     Grid.Column="0"
-                                     Padding="12,8" 
-                                     BorderThickness="1" 
-                                     BorderBrush="#E2E8F0" 
-                                     Background="White" 
-                                     IsReadOnly="True"/>
-                            <Button x:Name="BtnSelectFile" 
-                                    Grid.Column="1"
-                                    Content="📁" 
-                                    Style="{StaticResource SecondaryButton}" 
-                                    Click="BtnSelectFile_Click" 
-                                    Margin="5,0,0,0"/>
+                            
+                            <StackPanel Grid.Column="0">
+                                <TextBlock x:Name="TxtPopupTitle" Text="Neue Unterlage hinzufügen" 
+                                           FontSize="20" FontWeight="Bold" Foreground="White"/>
+                                <TextBlock Text="Füllen Sie alle erforderlichen Felder aus" 
+                                           FontSize="13" Foreground="#DBEAFE" Margin="0,4,0,0"/>
+                            </StackPanel>
+                            
+                            <Button Grid.Column="1" Content="✕" Style="{StaticResource IconButton}" 
+                                    Foreground="White" FontSize="20" Click="BtnClosePopup_Click"/>
                         </Grid>
-                        
-                        <TextBlock x:Name="TxtFileInfo" 
-                                   Text="" 
-                                   FontSize="12" 
-                                   Foreground="#64748B" 
-                                   Margin="0,0,0,15"/>
-                    </StackPanel>
-                </ScrollViewer>
-                
-                <!-- Action Buttons -->
-                <Border Grid.Row="2" Background="White" CornerRadius="0,0,8,8" Padding="20,15" BorderThickness="0,1,0,0" BorderBrush="#E2E8F0">
-                    <StackPanel x:Name="ActionButtonsPanel" Visibility="Collapsed">
-                        <Button x:Name="BtnSave" 
-                                Content="Speichern" 
-                                Style="{StaticResource PrimaryButton}" 
-                                Click="BtnSave_Click" 
-                                Margin="0,0,0,10"/>
-                        <Button x:Name="BtnCancel" 
-                                Content="Abbrechen" 
-                                Style="{StaticResource SecondaryButton}" 
-                                Click="BtnCancel_Click"/>
-                    </StackPanel>
-                </Border>
-            </Grid>
+                    </Border>
+                    
+                    <!-- Popup Content -->
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="24,20">
+                        <StackPanel>
+                            <!-- Bezeichnung -->
+                            <TextBlock Text="Bezeichnung *" FontWeight="SemiBold" FontSize="13" 
+                                       Foreground="#374151" Margin="0,0,0,6"/>
+                            <TextBox x:Name="TxtBezeichnung" Height="42" Padding="12" FontSize="14"
+                                     BorderBrush="#D1D5DB" BorderThickness="1" Margin="0,0,0,16"/>
+                            
+                            <!-- Mitarbeiter -->
+                            <TextBlock Text="Mitarbeiter *" FontWeight="SemiBold" FontSize="13" 
+                                       Foreground="#374151" Margin="0,0,0,6"/>
+                            <ComboBox x:Name="CmbDetailsMitarbeiter" Height="42" Padding="12,0" FontSize="14"
+                                      BorderBrush="#D1D5DB" BorderThickness="1" Margin="0,0,0,16"
+                                      SelectionChanged="CmbDetailsMitarbeiter_SelectionChanged"/>
+                            
+                            <!-- Objekt -->
+                            <TextBlock Text="Objekt" FontWeight="SemiBold" FontSize="13" 
+                                       Foreground="#374151" Margin="0,0,0,6"/>
+                            <ComboBox x:Name="CmbDetailsObjekt" Height="42" Padding="12,0" FontSize="14"
+                                      BorderBrush="#D1D5DB" BorderThickness="1" Margin="0,0,0,16"
+                                      DisplayMemberPath="ObjektName"
+                                      SelectedValuePath="ObjektId"
+                                      SelectionChanged="CmbDetailsObjekt_SelectionChanged"/>
+                            
+                            <!-- Kategorie -->
+                            <TextBlock Text="Kategorie" FontWeight="SemiBold" FontSize="13" 
+                                       Foreground="#374151" Margin="0,0,0,6"/>
+                            <TextBox x:Name="TxtDetailsKategorie" Height="42" Padding="12" FontSize="14"
+                                     BorderBrush="#D1D5DB" BorderThickness="1" Margin="0,0,0,16"/>
+                            
+                            <!-- Gültig ab -->
+                            <TextBlock Text="Gültig ab" FontWeight="SemiBold" FontSize="13" 
+                                       Foreground="#374151" Margin="0,0,0,6"/>
+                            <DatePicker x:Name="DpGueltigAb" Height="42" Padding="12,0" FontSize="14"
+                                        BorderBrush="#D1D5DB" BorderThickness="1" Margin="0,0,0,16"/>
+                            
+                            <!-- Gültig bis -->
+                            <TextBlock Text="Gültig bis" FontWeight="SemiBold" FontSize="13" 
+                                       Foreground="#374151" Margin="0,0,0,6"/>
+                            <DatePicker x:Name="DpGueltigBis" Height="42" Padding="12,0" FontSize="14"
+                                        BorderBrush="#D1D5DB" BorderThickness="1" Margin="0,0,0,16"/>
+                            
+                            <!-- Aktiv Status -->
+                            <CheckBox x:Name="ChkIstAktiv" Content="Dokument ist aktiv" 
+                                      FontWeight="Medium" FontSize="14" Foreground="#374151" 
+                                      IsChecked="True" Margin="0,0,0,16"/>
+                            
+                            <!-- Datei Upload -->
+                            <TextBlock Text="Datei hochladen *" FontWeight="SemiBold" FontSize="13" 
+                                       Foreground="#374151" Margin="0,0,0,6"/>
+                            <Grid Margin="0,0,0,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                
+                                <TextBox x:Name="TxtFilePath" Grid.Column="0" Height="42" Padding="12" 
+                                         FontSize="14" BorderBrush="#D1D5DB" BorderThickness="1" 
+                                         IsReadOnly="True" Background="#F9FAFB"/>
+                                <Button x:Name="BtnSelectFile" Grid.Column="1" Content="📁 Durchsuchen" 
+                                        Style="{StaticResource SecondaryButton}" Height="42" Margin="8,0,0,0"
+                                        Click="BtnSelectFile_Click"/>
+                            </Grid>
+                            <TextBlock x:Name="TxtFileInfo" Text="" FontSize="12" Foreground="#6B7280"/>
+                        </StackPanel>
+                    </ScrollViewer>
+                    
+                    <!-- Popup Footer -->
+                    <Border Grid.Row="2" Background="#F9FAFB" CornerRadius="0,0,16,16" Padding="24,16" 
+                            BorderThickness="0,1,0,0" BorderBrush="#E5E7EB">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            
+                            <Button Grid.Column="1" x:Name="BtnCancel" Content="Abbrechen" 
+                                    Style="{StaticResource SecondaryButton}" MinWidth="120" Margin="0,0,12,0"
+                                    Click="BtnCancel_Click"/>
+                            <Button Grid.Column="2" x:Name="BtnSave" Content="💾 Speichern" 
+                                    Style="{StaticResource PrimaryButton}" MinWidth="120"
+                                    Click="BtnSave_Click"/>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </Border>
         </Border>
     </Grid>
 </UserControl>

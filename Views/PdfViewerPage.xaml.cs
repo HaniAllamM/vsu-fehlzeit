@@ -4,6 +4,7 @@ using System.Windows;
 using System.Windows.Controls;
 using FehlzeitApp.Models;
 using FehlzeitApp.Services;
+using Microsoft.Web.WebView2.Core;
 
 namespace FehlzeitApp.Views
 {
@@ -11,7 +12,7 @@ namespace FehlzeitApp.Views
     {
         private readonly UnterlageService _unterlageService;
         private readonly Unterlage _unterlage;
-        private string? _downloadUrl;
+        private bool _isWebViewInitialized = false;
 
         public event EventHandler? CloseRequested;
 
@@ -29,7 +30,33 @@ namespace FehlzeitApp.Views
 
         private async void PdfViewerPage_Loaded(object sender, RoutedEventArgs e)
         {
+            await InitializeWebViewAsync();
             await LoadPdfAsync();
+        }
+
+        private async Task InitializeWebViewAsync()
+        {
+            try
+            {
+                await PdfWebView.EnsureCoreWebView2Async(null);
+                _isWebViewInitialized = true;
+
+                PdfWebView.CoreWebView2.NavigationCompleted += (s, args) =>
+                {
+                    if (args.IsSuccess)
+                    {
+                        // Loaded successfully
+                    }
+                    else
+                    {
+                        ShowError($"Fehler beim Laden des PDFs: {args.WebErrorStatus}");
+                    }
+                };
+            }
+            catch (Exception ex)
+            {
+                ShowError($"Fehler bei der WebView2 Initialisierung: {ex.Message}");
+            }
         }
 
         private async Task LoadPdfAsync()
@@ -39,23 +66,17 @@ namespace FehlzeitApp.Views
                 // Show loading state
                 ShowLoading();
 
-                // Get download URL
-                var response = await _unterlageService.GetDownloadUrlAsync(_unterlage.UnterlageId);
-                
-                if (response.Success && !string.IsNullOrEmpty(response.DownloadUrl))
-                {
-                    _downloadUrl = response.DownloadUrl;
-                    
-                    // Navigate to PDF
-                    PdfWebBrowser.Navigate(_downloadUrl);
-                    
-                    // Show PDF panel
-                    ShowPdf();
-                }
-                else
-                {
-                    ShowError(response.Message ?? "Fehler beim Abrufen der Download-URL");
-                }
+                if (!_isWebViewInitialized)
+                    await InitializeWebViewAsync();
+
+                // Build inline view URL
+                var viewUrl = _unterlageService.GetViewUrl(_unterlage.UnterlageId);
+
+                // Navigate to inline view URL
+                PdfWebView.CoreWebView2.Navigate(viewUrl);
+
+                // Show PDF panel
+                ShowPdf();
             }
             catch (Exception ex)
             {

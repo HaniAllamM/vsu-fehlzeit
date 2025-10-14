@@ -247,6 +247,7 @@ namespace FehlzeitApp.Models
     {
         public int UnterlageId { get; set; }
         public int MitarbeiterId { get; set; }
+        public int? ObjektId { get; set; }
         public string Bezeichnung { get; set; } = string.Empty;
         public string Dateiname { get; set; } = string.Empty;
         public string? Dateityp { get; set; }
@@ -261,14 +262,24 @@ namespace FehlzeitApp.Models
         public DateTime? LastModifiedAt { get; set; }
         public int? LastModifiedBy { get; set; }
         
-        // Navigation property for employee name
+        // Navigation properties
         public string? MitarbeiterName { get; set; }
+        public string? ObjektName { get; set; }
         
         // Download link from API
         public string? DownloadLink { get; set; }
         
         // UI property for status display
         public string StatusText { get; set; } = string.Empty;
+    }
+    
+    // For GET /api/unterlagen/ endpoint
+    public class UnterlageListRequest
+    {
+        public int? MitarbeiterId { get; set; }
+        public string? Kategorie { get; set; }
+        public DateTime? VonDatum { get; set; }
+        public DateTime? BisDatum { get; set; }
     }
     
     // === API REQUEST/RESPONSE MODELS (matching your web API) ===
@@ -304,13 +315,11 @@ namespace FehlzeitApp.Models
         public string? Bemerkung { get; set; }
     }
     
-    // API Response wrappers
-    public class ApiResponse<T>
+    public class FixObjektIdsResponse
     {
         public bool Success { get; set; }
         public string Message { get; set; } = string.Empty;
-        public T? Data { get; set; }
-        public List<string> Errors { get; set; } = new();
+        public int FixedCount { get; set; }
     }
     
     public class PagedResponse<T>
@@ -322,5 +331,14 @@ namespace FehlzeitApp.Models
         public int TotalPages => (int)Math.Ceiling((double)TotalCount / PageSize);
         public bool HasNextPage => PageNumber < TotalPages;
         public bool HasPreviousPage => PageNumber > 1;
+    }
+
+    // Standard API response wrapper used across services
+    public class ApiResponse<T>
+    {
+        public bool Success { get; set; }
+        public string Message { get; set; } = string.Empty;
+        public T? Data { get; set; }
+        public List<string>? Errors { get; set; }
     }
 }

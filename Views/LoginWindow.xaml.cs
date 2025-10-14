@@ -30,16 +30,9 @@ namespace FehlzeitApp.Views
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            // Use preloaded AuthService if available, otherwise create new one synchronously
-            if (App.SharedAuthService != null)
-            {
-                _authService = App.SharedAuthService;
-            }
-            else
-            {
-                // Fallback: create new AuthService synchronously if preloading failed
-                _authService = AuthService.CreateSync();
-            }
+            // Always create a fresh AuthService to avoid cached state from previous logins
+            // This ensures clean state when logging out and logging back in as a different user
+            _authService = AuthService.CreateSync();
             
             TxtUsername.Focus();
         }

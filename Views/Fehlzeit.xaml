@@ -379,6 +379,10 @@
                         <Button Content="Daten laden" Click="BtnLaden_Click" Style="{StaticResource PrimaryButton}" 
                                 Height="40" MinWidth="100" Margin="0,0,8,0"/>
                         <Button Content="Drucken" Click="BtnPrint_Click" Style="{StaticResource SecondaryButton}" 
+                                Height="40" MinWidth="100" Margin="0,0,8,0"/>
+                        <Button Content="Drucken (Formatiert)" Click="BtnPrintAdvanced_Click" Style="{StaticResource SecondaryButton}" 
+                                Height="40" MinWidth="140" Margin="0,0,8,0"/>
+                        <Button Content="Vorschau" Click="BtnPrintPreview_Click" Style="{StaticResource SecondaryButton}" 
                                 Height="40" MinWidth="100"/>
                     </StackPanel>
                 </Grid>
@@ -439,6 +443,7 @@
             <Grid.RowDefinitions>
                 <RowDefinition Height="*"/>
                 <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
             
             <DataGrid x:Name="dgAttendance" 
@@ -451,8 +456,57 @@
                       ScrollViewer.CanContentScroll="True"
                       ScrollViewer.IsDeferredScrollingEnabled="True" />
             
+            <!-- Pagination Controls -->
+            <Border x:Name="PaginationPanel" Grid.Row="1" Background="White" BorderThickness="0,1,0,0" BorderBrush="#E5E7EB" Padding="15,10" Visibility="Collapsed">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    
+                    <!-- Page Info -->
+                    <TextBlock x:Name="TxtPageInfo" 
+                               Text="Seite 1 von 1" 
+                               FontSize="13" 
+                               Foreground="#374151" 
+                               VerticalAlignment="Center"
+                               FontWeight="Medium"/>
+                    
+                    <!-- Navigation Buttons -->
+                    <StackPanel Grid.Column="1" Orientation="Horizontal">
+                        <Button x:Name="BtnFirstPage" 
+                                Content="⏮️ Erste" 
+                                Click="BtnFirstPage_Click"
+                                Style="{StaticResource SecondaryButton}"
+                                Padding="12,6"
+                                FontSize="12"
+                                Margin="0,0,5,0"/>
+                        <Button x:Name="BtnPrevPage" 
+                                Content="◀️ Zurück" 
+                                Click="BtnPrevPage_Click"
+                                Style="{StaticResource SecondaryButton}"
+                                Padding="12,6"
+                                FontSize="12"
+                                Margin="0,0,5,0"/>
+                        <Button x:Name="BtnNextPage" 
+                                Content="Weiter ▶️" 
+                                Click="BtnNextPage_Click"
+                                Style="{StaticResource SecondaryButton}"
+                                Padding="12,6"
+                                FontSize="12"
+                                Margin="0,0,5,0"/>
+                        <Button x:Name="BtnLastPage" 
+                                Content="Letzte ⏭️" 
+                                Click="BtnLastPage_Click"
+                                Style="{StaticResource SecondaryButton}"
+                                Padding="12,6"
+                                FontSize="12"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+            
             <!-- Performance Status Bar -->
-            <Border Grid.Row="1" Background="#F8F9FA" BorderThickness="0,1,0,0" BorderBrush="#E5E7EB" Padding="10,8">
+            <Border Grid.Row="2" Background="#F8F9FA" BorderThickness="0,1,0,0" BorderBrush="#E5E7EB" Padding="10,8">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>

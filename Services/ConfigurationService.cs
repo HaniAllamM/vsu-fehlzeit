@@ -96,7 +96,7 @@ namespace FehlzeitApp.Services
             {
                 ApiSettings = new ApiSettings
                 {
-                    BaseUrl = "http://localhost:5000/api",
+                    BaseUrl = "http://localhost:5033/api",
                     Timeout = 30,
                     EnableLogging = true
                 },

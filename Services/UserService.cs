@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text.Json;
 using System.Threading.Tasks;
 using FehlzeitApp.Models;
 
@@ -30,7 +31,7 @@ namespace FehlzeitApp.Services
                 
                 var query = queryParams.Count > 0 ? "?" + string.Join("&", queryParams) : "";
                 
-                // Make direct HTTP call to handle custom response format
+                // Use users endpoint for actual user data
                 var fullUrl = $"{_configService.ApiSettings.BaseUrl}/users{query}";
                 System.Diagnostics.Debug.WriteLine($"[UserService] GET {fullUrl}");
                 
@@ -42,28 +43,46 @@ namespace FehlzeitApp.Services
                 
                 if (response.IsSuccessStatusCode)
                 {
-                    // API returns { success, message, users } directly
-                    var userListResponse = System.Text.Json.JsonSerializer.Deserialize<UserListResponse>(content, 
+                    // Users API returns { success, message, users } format
+                    var userResponse = System.Text.Json.JsonSerializer.Deserialize<JsonElement>(content, 
                         new System.Text.Json.JsonSerializerOptions 
                         { 
-                            PropertyNameCaseInsensitive = true,
-                            PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase
+                            PropertyNameCaseInsensitive = true
                         });
                     
-                    if (userListResponse != null && userListResponse.Success)
+                    if (userResponse.TryGetProperty("success", out var successProp) && successProp.GetBoolean())
                     {
+                        var users = new List<UserDto>();
+                        
+                        if (userResponse.TryGetProperty("users", out var usersProp) && usersProp.ValueKind == JsonValueKind.Array)
+                        {
+                            foreach (var user in usersProp.EnumerateArray())
+                            {
+                                users.Add(new UserDto
+                                {
+                                    Id = user.GetProperty("id").GetInt32(),
+                                    Username = user.GetProperty("username").GetString() ?? "",
+                                    Email = user.TryGetProperty("email", out var emailProp) ? emailProp.GetString() : null,
+                                    FirstName = user.TryGetProperty("firstName", out var firstNameProp) ? firstNameProp.GetString() : null,
+                                    LastName = user.TryGetProperty("lastName", out var lastNameProp) ? lastNameProp.GetString() : null,
+                                    IsActive = user.TryGetProperty("isActive", out var activeProp) && activeProp.GetBoolean(),
+                                    IsAdmin = user.TryGetProperty("isAdmin", out var adminProp) && adminProp.GetBoolean()
+                                });
+                            }
+                        }
+                        
                         return new ApiResponse<List<UserDto>>
                         {
                             Success = true,
-                            Data = userListResponse.Users,
-                            Message = userListResponse.Message
+                            Data = users,
+                            Message = userResponse.TryGetProperty("message", out var msgProp) ? msgProp.GetString() ?? "Success" : "Success"
                         };
                     }
                     
                     return new ApiResponse<List<UserDto>>
                     {
                         Success = false,
-                        Message = userListResponse?.Message ?? "Failed to load users",
+                        Message = userResponse.TryGetProperty("message", out var errorMsgProp) ? errorMsgProp.GetString() ?? "Failed to load users" : "Failed to load users",
                         Data = new List<UserDto>()
                     };
                 }
@@ -73,7 +92,7 @@ namespace FehlzeitApp.Services
                     {
                         Success = false,
                         Message = $"API Error: {response.StatusCode}",
-                        Errors = { content }
+                        Errors = new List<string> { content }
                     };
                 }
             }
@@ -162,7 +181,7 @@ namespace FehlzeitApp.Services
                     Message = response.Message,
                     InsertedCount = 0,
                     ErrorCount = 0,
-                    Errors = response.Errors
+                    Errors = response.Errors ?? new List<string>()
                 };
             }
             catch (Exception ex)

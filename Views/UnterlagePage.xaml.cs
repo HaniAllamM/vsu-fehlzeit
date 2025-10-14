@@ -10,6 +10,8 @@ using System.Windows.Controls;
 using FehlzeitApp.Models;
 using FehlzeitApp.Services;
 using Microsoft.Win32;
+using Microsoft.Web.WebView2.Core;
+using CreateUnterlageWithFileRequest = FehlzeitApp.Services.CreateUnterlageWithFileRequest;
 
 namespace FehlzeitApp.Views
 {
@@ -24,11 +26,14 @@ namespace FehlzeitApp.Views
         private List<Unterlage> _allUnterlagen = new();
         private List<string> _kategorien = new();
         private List<Mitarbeiter> _availableMitarbeiter = new();
-        private List<string> _mitarbeiterNames = new();
+        private List<Objekt> _availableObjekte = new();
         private Unterlage? _selectedUnterlage;
         private bool _isEditMode = false;
         private bool _isNewMode = false;
         private string _selectedFilePath = string.Empty;
+        private bool _isWebViewInitialized = false;
+        private bool _wasPdfVisibleBeforePopup = false;
+        private bool _isLoadingDetails = false;
 
         public ObservableCollection<Unterlage> UnterlagenList
         {
@@ -36,16 +41,6 @@ namespace FehlzeitApp.Views
             set
             {
                 _unterlagenList = value;
-                OnPropertyChanged();
-            }
-        }
-
-        public ObservableCollection<Mitarbeiter> MitarbeiterList
-        {
-            get => _mitarbeiterList;
-            set
-            {
-                _mitarbeiterList = value;
                 OnPropertyChanged();
             }
         }
@@ -69,26 +64,62 @@ namespace FehlzeitApp.Views
                 "Sonstiges"
             };
             
-            InitializeKategorieComboBoxes();
+            // Kategorie is now a TextBox - no initialization needed
+            InitializeWebView();
         }
 
-        private void InitializeKategorieComboBoxes()
+        private async void InitializeWebView()
         {
-            // Filter ComboBox
-            CmbKategorie.Items.Clear();
-            foreach (var kategorie in _kategorien)
+            try
             {
-                CmbKategorie.Items.Add(kategorie);
-            }
-            CmbKategorie.SelectedIndex = 0;
+                var environment = await CoreWebView2Environment.CreateAsync();
+                await PdfWebView.EnsureCoreWebView2Async(environment);
+                _isWebViewInitialized = true;
+                
+                // Add navigation event handlers for debugging
+                PdfWebView.CoreWebView2.NavigationCompleted += (sender, args) =>
+                {
+                    if (args.IsSuccess)
+                    {
+                        System.Diagnostics.Debug.WriteLine("PDF loaded successfully!");
+                        PdfLoadingPanel.Visibility = Visibility.Collapsed;
+                    }
+                    else
+                    {
+                        System.Diagnostics.Debug.WriteLine($"PDF load failed: {args.WebErrorStatus}");
+                        MessageBox.Show($"Fehler beim Laden des PDFs: {args.WebErrorStatus}", 
+                                      "Ladefehler", 
+                                      MessageBoxButton.OK, 
+                                      MessageBoxImage.Warning);
+                        PdfLoadingPanel.Visibility = Visibility.Collapsed;
+                        EmptyStatePanel.Visibility = Visibility.Visible;
+                    }
+                };
+                
+                PdfWebView.CoreWebView2.NavigationStarting += (sender, args) =>
+                {
+                    System.Diagnostics.Debug.WriteLine($"Navigation starting to: {args.Uri}");
+                };
 
-            // Details ComboBox (without "Alle Kategorien")
-            CmbDetailsKategorie.Items.Clear();
-            foreach (var kategorie in _kategorien.Skip(1))
+                // Configure for inline PDF viewing (use defaults compatible with SDK version)
+                PdfWebView.CoreWebView2.Settings.AreDefaultContextMenusEnabled = false;
+                PdfWebView.CoreWebView2.NewWindowRequested += (sender, args) =>
+                {
+                    // Prevent opening in external windows
+                    args.Handled = true;
+                };
+            }
+            catch (Exception ex)
             {
-                CmbDetailsKategorie.Items.Add(kategorie);
+                System.Diagnostics.Debug.WriteLine($"WebView2 initialization error: {ex.Message}");
+                MessageBox.Show($"Fehler bei der WebView2 Initialisierung: {ex.Message}", 
+                              "Fehler", 
+                              MessageBoxButton.OK, 
+                              MessageBoxImage.Error);
             }
         }
+
+        // Kategorie is now a TextBox - no initialization needed
 
         private async void UnterlagePage_Loaded(object sender, RoutedEventArgs e)
         {
@@ -122,42 +153,77 @@ namespace FehlzeitApp.Views
             {
                 ShowLoading(true);
 
-                // Load Objekte for ComboBox
-                await LoadObjekteAsync();
-
                 // Load Mitarbeiter for ComboBoxes
                 var mitarbeiterResponse = await _mitarbeiterService.GetAllAsync();
                 if (mitarbeiterResponse.Success && mitarbeiterResponse.Data != null)
                 {
                     _availableMitarbeiter = mitarbeiterResponse.Data;
-                    _mitarbeiterNames = mitarbeiterResponse.Data.Select(m => m.Name).ToList();
-
-                    MitarbeiterList.Clear();
-                    var allMitarbeiterItem = new Mitarbeiter { MitarbeiterId = 0, Name = "Alle Mitarbeiter" };
-                    MitarbeiterList.Add(allMitarbeiterItem);
                     
+                    // Populate popup mitarbeiter combobox
+                    CmbDetailsMitarbeiter.Items.Clear();
                     foreach (var mitarbeiter in mitarbeiterResponse.Data)
                     {
-                        MitarbeiterList.Add(mitarbeiter);
+                        CmbDetailsMitarbeiter.Items.Add(mitarbeiter);
                     }
-
-                    // Details ComboBox (without "Alle Mitarbeiter")
-                    CmbDetailsMitarbeiter.ItemsSource = MitarbeiterList.Skip(1);
                     CmbDetailsMitarbeiter.DisplayMemberPath = "Name";
                     CmbDetailsMitarbeiter.SelectedValuePath = "MitarbeiterId";
                 }
 
-                // Load Objekte for details ComboBox
+                // Load Objekte for ComboBoxes
                 var objektResponse = await _objektService.GetAllAsync();
                 if (objektResponse.Success && objektResponse.Data != null)
                 {
-                    CmbDetailsObjekt.ItemsSource = objektResponse.Data;
-                    CmbDetailsObjekt.DisplayMemberPath = "ObjektName";
-                    CmbDetailsObjekt.SelectedValuePath = "ObjektId";
+                    _availableObjekte = objektResponse.Data;
+
+                    // Populate filter objekt combobox
+                    CmbObjekt.Items.Clear();
+
+                    // Add "Alle Objekte" option
+                    CmbObjekt.Items.Add(new Objekt
+                    {
+                        ObjektId = -1,
+                        ObjektName = "Alle Objekte"
+                    });
+
+                    foreach (var objekt in objektResponse.Data)
+                    {
+                        CmbObjekt.Items.Add(objekt);
+                    }
+
+                    // Populate popup objekt combobox
+                    CmbDetailsObjekt.Items.Clear();
+
+                    // Add "Kein spezifisches Objekt" option (for optional Objekt assignment)
+                    CmbDetailsObjekt.Items.Add(new Objekt
+                    {
+                        ObjektId = -1,
+                        ObjektName = "Kein spezifisches Objekt"
+                    });
+
+                    foreach (var objekt in objektResponse.Data)
+                    {
+                        CmbDetailsObjekt.Items.Add(objekt);
+                    }
+                    
+                    // Default to first option
+                    CmbDetailsObjekt.SelectedIndex = 0;
                 }
 
-                // Initialize Mitarbeiter TextBox with placeholder
-                InitializeMitarbeiterTextBox();
+                // Populate filter Mitarbeiter combobox (initially with all)
+                CmbFilterMitarbeiter.Items.Clear();
+                CmbFilterMitarbeiter.Items.Add(new Mitarbeiter
+                {
+                    MitarbeiterId = -1,
+                    Name = "Alle Mitarbeiter"
+                });
+                if (_availableMitarbeiter != null && _availableMitarbeiter.Count > 0)
+                {
+                    foreach (var mitarbeiter in _availableMitarbeiter)
+                    {
+                        CmbFilterMitarbeiter.Items.Add(mitarbeiter);
+                    }
+                }
+                CmbFilterMitarbeiter.SelectedIndex = 0;
 
                 // Load Unterlagen
                 await LoadUnterlagenAsync();
@@ -181,19 +247,45 @@ namespace FehlzeitApp.Views
 
             try
             {
-                var response = await _unterlageService.GetAllAsync();
-                if (response.Success && response.Data != null)
+                // Get date filters
+                DateTime? vonDatum = DpFilterVonDatum.SelectedDate;
+                DateTime? bisDatum = DpFilterBisDatum.SelectedDate;
+
+                var response = await _unterlageService.GetAllAsync(null, null, vonDatum, bisDatum);
+                if (response.Success)
                 {
-                    _allUnterlagen = response.Data;
+                    _allUnterlagen = response.Data ?? new List<Unterlage>();
+                    
+                    // Populate ObjektName if not provided by API
+                    foreach (var unterlage in _allUnterlagen)
+                    {
+                        if (unterlage.ObjektId.HasValue && string.IsNullOrEmpty(unterlage.ObjektName))
+                        {
+                            var objekt = _availableObjekte.FirstOrDefault(o => o.ObjektId == unterlage.ObjektId.Value);
+                            if (objekt != null)
+                            {
+                                unterlage.ObjektName = objekt.ObjektName;
+                            }
+                        }
+                    }
+                    
                     ApplyFilters();
                     UpdateRecordCount();
                 }
                 else
                 {
-                    MessageBox.Show(response.Message ?? "Fehler beim Laden der Unterlagen", 
+                    var details = string.Empty;
+                    if (response.Errors != null && response.Errors.Count > 0)
+                    {
+                        details = "\n\nDetails: " + string.Join("; ", response.Errors);
+                    }
+                    MessageBox.Show((response.Message ?? "Fehler beim Laden der Unterlagen") + details, 
                                   "Fehler", 
                                   MessageBoxButton.OK, 
                                   MessageBoxImage.Warning);
+                    _allUnterlagen = new List<Unterlage>();
+                    ApplyFilters();
+                    UpdateRecordCount();
                 }
             }
             catch (Exception ex)
@@ -220,19 +312,23 @@ namespace FehlzeitApp.Views
                     (u.Kategorie?.ToLower().Contains(searchTerm) ?? false));
             }
 
-            // Category filter
-            if (CmbKategorie.SelectedItem != null && CmbKategorie.SelectedItem.ToString() != "Alle Kategorien")
+            // Objekt filter
+            if (CmbObjekt.SelectedItem is Objekt selectedObjekt && selectedObjekt.ObjektId != -1)
             {
-                var selectedKategorie = CmbKategorie.SelectedItem.ToString();
-                filteredList = filteredList.Where(u => u.Kategorie == selectedKategorie);
+                filteredList = filteredList.Where(u => u.ObjektId == selectedObjekt.ObjektId);
             }
 
-            // Employee filter from TextBox
-            if (!string.IsNullOrWhiteSpace(TxtMitarbeiter.Text) && TxtMitarbeiter.Text != "Mitarbeiter eingeben...")
+            // Category filter
+            if (!string.IsNullOrWhiteSpace(TxtKategorie.Text))
             {
-                var employeeName = TxtMitarbeiter.Text.ToLower();
-                filteredList = filteredList.Where(u => 
-                    u.MitarbeiterName?.ToLower().Contains(employeeName) ?? false);
+                var searchKategorie = TxtKategorie.Text.ToLower();
+                filteredList = filteredList.Where(u => u.Kategorie != null && u.Kategorie.ToLower().Contains(searchKategorie));
+            }
+
+            // Employee filter from ComboBox
+            if (CmbFilterMitarbeiter.SelectedItem is Mitarbeiter selectedMitarbeiter && selectedMitarbeiter.MitarbeiterId != -1)
+            {
+                filteredList = filteredList.Where(u => u.MitarbeiterId == selectedMitarbeiter.MitarbeiterId);
             }
 
             // Add StatusText property for display
@@ -251,7 +347,8 @@ namespace FehlzeitApp.Views
 
         private void UpdateRecordCount()
         {
-            TxtRecordCount.Text = $"{UnterlagenList.Count} Unterlagen gefunden";
+            int count = UnterlagenList.Count;
+            TxtRecordCount.Text = count == 1 ? "1 Dokument" : $"{count} Dokumente";
         }
 
         private void ShowLoading(bool show)
@@ -260,11 +357,145 @@ namespace FehlzeitApp.Views
             UnterlagenDataGrid.Visibility = show ? Visibility.Collapsed : Visibility.Visible;
         }
 
+        private void ShowPdfLoading(bool show)
+        {
+            PdfLoadingPanel.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
+            EmptyStatePanel.Visibility = Visibility.Collapsed;
+            PdfWebView.Visibility = Visibility.Collapsed;
+        }
+
+        private async void UnterlagenDataGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (UnterlagenDataGrid.SelectedItem is Unterlage selectedUnterlage)
+            {
+                _selectedUnterlage = selectedUnterlage;
+                await LoadPdfPreview(selectedUnterlage);
+            }
+        }
+
+        private async Task LoadPdfPreview(Unterlage unterlage)
+        {
+            System.Diagnostics.Debug.WriteLine("=== LoadPdfPreview STARTED ===");
+            System.Diagnostics.Debug.WriteLine($"Service null? {_unterlageService == null}");
+            System.Diagnostics.Debug.WriteLine($"WebView initialized? {_isWebViewInitialized}");
+            
+            if (_unterlageService == null)
+            {
+                MessageBox.Show("UnterlageService ist nicht initialisiert!", "Fehler", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+            
+            if (!_isWebViewInitialized)
+            {
+                MessageBox.Show("WebView2 ist nicht initialisiert! Bitte warten Sie einen Moment und versuchen Sie es erneut.", "Fehler", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            try
+            {
+                ShowPdfLoading(true);
+                
+                // Update header
+                TxtPdfTitle.Text = $"📑 {unterlage.Bezeichnung}";
+                TxtPdfSubtitle.Text = $"{unterlage.Dateiname} • {unterlage.MitarbeiterName}";
+                BtnDownloadPdf.Visibility = Visibility.Visible;
+                BtnDownloadPdf.Tag = unterlage;
+
+                System.Diagnostics.Debug.WriteLine($"Loading PDF for ID: {unterlage.UnterlageId}");
+                
+                // Prefer a URL suitable for inline display
+                var pdfUrl = await _unterlageService.GetPdfDisplayUrlAsync(unterlage.UnterlageId);
+                if (string.IsNullOrEmpty(pdfUrl))
+                    throw new Exception("PDF URL konnte nicht abgerufen werden");
+
+                System.Diagnostics.Debug.WriteLine($"=== NAVIGATING TO PDF URL ===");
+                System.Diagnostics.Debug.WriteLine($"URL: {pdfUrl}");
+
+                // Navigate via Source for reliable PDF rendering
+                PdfWebView.Source = new Uri(pdfUrl);
+                
+                System.Diagnostics.Debug.WriteLine("Navigation called, showing WebView...");
+                
+                // Show PDF viewer immediately
+                EmptyStatePanel.Visibility = Visibility.Collapsed;
+                PdfLoadingPanel.Visibility = Visibility.Collapsed;
+                PdfWebView.Visibility = Visibility.Visible;
+                
+                System.Diagnostics.Debug.WriteLine($"WebView Visibility: {PdfWebView.Visibility}");
+                System.Diagnostics.Debug.WriteLine($"EmptyState Visibility: {EmptyStatePanel.Visibility}");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"=== EXCEPTION in LoadPdfPreview ===");
+                System.Diagnostics.Debug.WriteLine($"Exception: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"StackTrace: {ex.StackTrace}");
+                
+                MessageBox.Show($"Fehler beim Laden der PDF-Vorschau: {ex.Message}\n\nDetails: {ex.StackTrace}", 
+                              "Fehler", 
+                              MessageBoxButton.OK, 
+                              MessageBoxImage.Warning);
+                
+                // Show empty state on error
+                EmptyStatePanel.Visibility = Visibility.Visible;
+                PdfLoadingPanel.Visibility = Visibility.Collapsed;
+                PdfWebView.Visibility = Visibility.Collapsed;
+            }
+        }
+
+        // POPUP DIALOG METHODS
+
+        private void ShowPopup(bool isEditMode = false)
+        {
+            _isEditMode = isEditMode;
+            _isNewMode = !isEditMode;
+            
+            if (isEditMode)
+            {
+                TxtPopupTitle.Text = "Unterlage bearbeiten";
+            }
+            else
+            {
+                TxtPopupTitle.Text = "Neue Unterlage hinzufügen";
+                ClearForm();
+            }
+            
+            // Hide PDF viewer while popup is open to avoid airspace issues
+            _wasPdfVisibleBeforePopup = PdfWebView.Visibility == Visibility.Visible;
+            PdfWebView.Visibility = Visibility.Collapsed;
+            PdfLoadingPanel.Visibility = Visibility.Collapsed;
+
+            PopupOverlay.Visibility = Visibility.Visible;
+        }
+
+        private void ClosePopup()
+        {
+            PopupOverlay.Visibility = Visibility.Collapsed;
+            ClearForm();
+            _isEditMode = false;
+            _isNewMode = false;
+
+            // Restore PDF viewer visibility if it was visible before opening popup
+            if (_wasPdfVisibleBeforePopup && _selectedUnterlage != null)
+            {
+                PdfWebView.Visibility = Visibility.Visible;
+                EmptyStatePanel.Visibility = Visibility.Collapsed;
+            }
+        }
+
         private void ClearForm()
         {
             TxtBezeichnung.Text = string.Empty;
-            CmbDetailsKategorie.SelectedIndex = -1;
+            
+            // Reset to "Kein spezifisches Objekt" (first item)
+            if (CmbDetailsObjekt.Items.Count > 0)
+            {
+                CmbDetailsObjekt.SelectedIndex = 0;
+            }
+            
+            // Mitarbeiter will be populated by the Objekt SelectionChanged event
             CmbDetailsMitarbeiter.SelectedIndex = -1;
+            
+            TxtDetailsKategorie.Text = string.Empty;
             DpGueltigAb.SelectedDate = null;
             DpGueltigBis.SelectedDate = null;
             ChkIstAktiv.IsChecked = true;
@@ -272,330 +503,85 @@ namespace FehlzeitApp.Views
             TxtFileInfo.Text = string.Empty;
             _selectedFilePath = string.Empty;
             _selectedUnterlage = null;
-            _isEditMode = false;
-            _isNewMode = false;
         }
 
         private void ShowDetails(Unterlage unterlage)
         {
             _selectedUnterlage = unterlage;
-            _isEditMode = true;
-            _isNewMode = false;
+            _isLoadingDetails = true;
 
             TxtBezeichnung.Text = unterlage.Bezeichnung;
-            
-            if (!string.IsNullOrEmpty(unterlage.Kategorie))
-            {
-                CmbDetailsKategorie.SelectedItem = unterlage.Kategorie;
-            }
-
-            if (unterlage.MitarbeiterId > 0)
-            {
-                CmbDetailsMitarbeiter.SelectedValue = unterlage.MitarbeiterId;
-            }
-
+            TxtDetailsKategorie.Text = unterlage.Kategorie ?? string.Empty;
             DpGueltigAb.SelectedDate = unterlage.GueltigAb;
             DpGueltigBis.SelectedDate = unterlage.GueltigBis;
             ChkIstAktiv.IsChecked = unterlage.IstAktiv;
+            
+            // First, select the objekt (this will trigger filtering of Mitarbeiter)
+            if (unterlage.ObjektId.HasValue)
+            {
+                bool objektFound = false;
+                foreach (var item in CmbDetailsObjekt.Items)
+                {
+                    if (item is Objekt o && o.ObjektId == unterlage.ObjektId.Value)
+                    {
+                        CmbDetailsObjekt.SelectedItem = item;
+                        objektFound = true;
+                        break;
+                    }
+                }
+                
+                if (!objektFound)
+                {
+                    // If Objekt not found, select "Alle Objekte"
+                    CmbDetailsObjekt.SelectedIndex = 0;
+                }
+            }
+            else
+            {
+                // No Objekt assigned, select "Alle Objekte"
+                CmbDetailsObjekt.SelectedIndex = 0;
+            }
+            
+            // Then, find and select the mitarbeiter (from the filtered list)
+            foreach (var item in CmbDetailsMitarbeiter.Items)
+            {
+                if (item is Mitarbeiter m && m.MitarbeiterId == unterlage.MitarbeiterId)
+                {
+                    CmbDetailsMitarbeiter.SelectedItem = item;
+                    break;
+                }
+            }
+            
+            _isLoadingDetails = false;
+            
             TxtFilePath.Text = unterlage.Dateiname;
-            
-            if (unterlage.Dateigroesse.HasValue)
-            {
-                var sizeInKB = unterlage.Dateigroesse.Value / 1024.0;
-                TxtFileInfo.Text = $"Dateigröße: {sizeInKB:F1} KB | Typ: {unterlage.Dateityp}";
-            }
-
-            TxtDetailsTitle.Text = "Unterlage bearbeiten";
-            DetailsPanel.Visibility = Visibility.Visible;
-            ActionButtonsPanel.Visibility = Visibility.Visible;
+            TxtFileInfo.Text = $"Vorhandene Datei: {unterlage.Dateiname}";
         }
 
-        // Event Handlers
-        private async void BtnRefresh_Click(object sender, RoutedEventArgs e)
-        {
-            await LoadUnterlagenAsync();
-        }
-
-        private void TxtSearch_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            ApplyFilters();
-            UpdateRecordCount();
-        }
-
-        private void CmbKategorie_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            ApplyFilters();
-            UpdateRecordCount();
-        }
-
-        private async Task LoadObjekteAsync()
-        {
-            if (_objektService == null) return;
-
-            try
-            {
-                var response = await _objektService.GetAllAsync();
-                if (response.Success && response.Data != null)
-                {
-                    var objektNames = response.Data.Select(o => o.ObjektName).ToList();
-                    CmbObjekt.ItemsSource = objektNames;
-                    CmbObjekt.SelectedIndex = -1; // No selection initially
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Fehler beim Laden der Objekte: {ex.Message}", 
-                              "Fehler", 
-                              MessageBoxButton.OK, 
-                              MessageBoxImage.Error);
-            }
-        }
-
-        private void InitializeMitarbeiterTextBox()
-        {
-            TxtMitarbeiter.Text = "Mitarbeiter eingeben...";
-            TxtMitarbeiter.Foreground = System.Windows.Media.Brushes.Gray;
-            
-            TxtMitarbeiter.GotFocus += (s, e) =>
-            {
-                if (TxtMitarbeiter.Text == "Mitarbeiter eingeben...")
-                {
-                    TxtMitarbeiter.Text = "";
-                    TxtMitarbeiter.Foreground = System.Windows.Media.Brushes.Black;
-                }
-            };
-            
-            TxtMitarbeiter.LostFocus += (s, e) =>
-            {
-                if (string.IsNullOrWhiteSpace(TxtMitarbeiter.Text))
-                {
-                    TxtMitarbeiter.Text = "Mitarbeiter eingeben...";
-                    TxtMitarbeiter.Foreground = System.Windows.Media.Brushes.Gray;
-                }
-            };
-        }
-
-        private void CmbObjekt_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            // When object changes, we could filter employees by object if needed
-            // For now, just trigger a filter update
-            ApplyFilters();
-            UpdateRecordCount();
-        }
-
-        private void TxtMitarbeiter_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            // Only apply filters if not in placeholder state
-            if (TxtMitarbeiter.Text != "Mitarbeiter eingeben...")
-            {
-                ApplyFilters();
-                UpdateRecordCount();
-            }
-        }
-
-        private async void BtnLoadData_Click(object sender, RoutedEventArgs e)
-        {
-            await LoadUnterlagenAsync();
-        }
-
-        private void UnterlagenDataGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            if (UnterlagenDataGrid.SelectedItem is Unterlage selectedUnterlage)
-            {
-                ShowDetails(selectedUnterlage);
-            }
-        }
+        // EVENT HANDLERS
 
         private void BtnAddUnterlage_Click(object sender, RoutedEventArgs e)
         {
-            ClearForm();
-            _isNewMode = true;
-            _isEditMode = false;
-            TxtDetailsTitle.Text = "Neue Unterlage erstellen";
-            DetailsPanel.Visibility = Visibility.Visible;
-            ActionButtonsPanel.Visibility = Visibility.Visible;
+            ShowPopup(false);
         }
-
-        private async void BtnDownload_Click(object sender, RoutedEventArgs e)
-        {
-            if (sender is Button button && button.Tag is Unterlage unterlage && _unterlageService != null)
-            {
-                try
-                {
-                    // Open PDF in browser
-                    await OpenPdfViewer(unterlage);
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"Fehler beim Öffnen des Dokuments: {ex.Message}", 
-                                  "Fehler", 
-                                  MessageBoxButton.OK, 
-                                  MessageBoxImage.Warning);
-                }
-            }
-        }
-
-        private async Task OpenPdfViewer(Unterlage unterlage)
-        {
-            if (_unterlageService == null)
-            {
-                MessageBox.Show("Service nicht verfügbar", "Fehler", MessageBoxButton.OK, MessageBoxImage.Error);
-                return;
-            }
-
-            try
-            {
-                // Get the authenticated pre-signed URL from the API
-                var downloadResponse = await _unterlageService.GetDownloadUrlAsync(unterlage.UnterlageId);
-                
-                if (downloadResponse.Success && !string.IsNullOrEmpty(downloadResponse.DownloadUrl))
-                {
-                    string downloadUrl = downloadResponse.DownloadUrl;
-                    
-                    // Debug: Show the URL and test it manually first
-                    var result = MessageBox.Show($"URL Generated:\n{downloadUrl}\n\nClick YES to try opening in browser, or NO to copy URL to clipboard for manual testing.", 
-                                                "Debug - Test URL", 
-                                                MessageBoxButton.YesNo, 
-                                                MessageBoxImage.Information);
-                    
-                    if (result == MessageBoxResult.No)
-                    {
-                        // Copy to clipboard for manual testing
-                        System.Windows.Clipboard.SetText(downloadUrl);
-                        MessageBox.Show("URL copied to clipboard. Please paste it in your browser manually to test.", "URL Copied", MessageBoxButton.OK, MessageBoxImage.Information);
-                        return;
-                    }
-                    
-                    try
-                    {
-                        // Method 1: Direct Process.Start with UseShellExecute
-                        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
-                        {
-                            FileName = downloadUrl,
-                            UseShellExecute = true
-                        });
-                    }
-                    catch (Exception ex)
-                    {
-                        try
-                        {
-                            // Method 2: Using cmd start
-                            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
-                            {
-                                FileName = "cmd",
-                                Arguments = $"/c start \"\" \"{downloadUrl}\"",
-                                UseShellExecute = false,
-                                CreateNoWindow = true
-                            });
-                        }
-                        catch (Exception ex2)
-                        {
-                            try
-                            {
-                                // Method 3: Direct Process.Start with UseShellExecute
-                                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
-                                {
-                                    FileName = downloadUrl,
-                                    UseShellExecute = true
-                                });
-                            }
-                            catch (Exception ex3)
-                            {
-                                MessageBox.Show($"Alle Methoden fehlgeschlagen:\n\n1. Shell Execute: {ex.Message}\n2. CMD Start: {ex2.Message}\n3. Direct Start: {ex3.Message}\n\nURL: {downloadUrl}\n\nBitte kopieren Sie die URL und öffnen Sie sie manuell im Browser.", 
-                                              "Browser-Fehler", 
-                                              MessageBoxButton.OK, 
-                                              MessageBoxImage.Warning);
-                            }
-                        }
-                    }
-                }
-                else
-                {
-                    MessageBox.Show(downloadResponse.Message ?? "Fehler beim Abrufen der Download-URL", 
-                                  "Fehler", 
-                                  MessageBoxButton.OK, 
-                                  MessageBoxImage.Warning);
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Fehler beim Öffnen des PDFs: {ex.Message}", 
-                              "Fehler", 
-                              MessageBoxButton.OK, 
-                              MessageBoxImage.Warning);
-            }
-        }
-
 
         private void BtnEdit_Click(object sender, RoutedEventArgs e)
         {
             if (sender is Button button && button.Tag is Unterlage unterlage)
             {
                 ShowDetails(unterlage);
+                ShowPopup(true);
             }
         }
 
-        private async void BtnDelete_Click(object sender, RoutedEventArgs e)
+        private void BtnClosePopup_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is Button button && button.Tag is Unterlage unterlage && _unterlageService != null)
-            {
-                var result = MessageBox.Show($"Sind Sie sicher, dass Sie die Unterlage '{unterlage.Bezeichnung}' löschen möchten?", 
-                                           "Löschen bestätigen", 
-                                           MessageBoxButton.YesNo, 
-                                           MessageBoxImage.Question);
-
-                if (result == MessageBoxResult.Yes)
-                {
-                    try
-                    {
-                        var deleteResponse = await _unterlageService.DeleteAsync(unterlage.UnterlageId);
-                        if (deleteResponse.Success)
-                        {
-                            MessageBox.Show("Unterlage erfolgreich gelöscht.", 
-                                          "Erfolg", 
-                                          MessageBoxButton.OK, 
-                                          MessageBoxImage.Information);
-                            await LoadUnterlagenAsync();
-                            ClearForm();
-                            DetailsPanel.Visibility = Visibility.Collapsed;
-                            ActionButtonsPanel.Visibility = Visibility.Collapsed;
-                        }
-                        else
-                        {
-                            MessageBox.Show(deleteResponse.Message ?? "Fehler beim Löschen der Unterlage", 
-                                          "Fehler", 
-                                          MessageBoxButton.OK, 
-                                          MessageBoxImage.Error);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show($"Fehler beim Löschen: {ex.Message}", 
-                                      "Fehler", 
-                                      MessageBoxButton.OK, 
-                                      MessageBoxImage.Error);
-                    }
-                }
-            }
+            ClosePopup();
         }
 
-        private void BtnSelectFile_Click(object sender, RoutedEventArgs e)
+        private void BtnCancel_Click(object sender, RoutedEventArgs e)
         {
-            var openFileDialog = new OpenFileDialog
-            {
-                Title = "Datei auswählen",
-                Filter = "Alle Dateien (*.*)|*.*|PDF Dateien (*.pdf)|*.pdf|Word Dokumente (*.docx)|*.docx|Excel Dateien (*.xlsx)|*.xlsx|Bilder (*.jpg;*.jpeg;*.png)|*.jpg;*.jpeg;*.png"
-            };
-
-            if (openFileDialog.ShowDialog() == true)
-            {
-                _selectedFilePath = openFileDialog.FileName;
-                TxtFilePath.Text = Path.GetFileName(_selectedFilePath);
-                
-                var fileInfo = new FileInfo(_selectedFilePath);
-                var sizeInKB = fileInfo.Length / 1024.0;
-                TxtFileInfo.Text = $"Dateigröße: {sizeInKB:F1} KB | Typ: {fileInfo.Extension}";
-            }
+            ClosePopup();
         }
 
         private async void BtnSave_Click(object sender, RoutedEventArgs e)
@@ -604,109 +590,468 @@ namespace FehlzeitApp.Views
 
             try
             {
-                // Validation
+                // Validate inputs
                 if (string.IsNullOrWhiteSpace(TxtBezeichnung.Text))
                 {
-                    MessageBox.Show("Bitte geben Sie eine Bezeichnung ein.", "Validierungsfehler", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    MessageBox.Show("Bitte geben Sie eine Bezeichnung ein.", "Validierungsfehler", 
+                                  MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
                 }
 
-                if (CmbDetailsMitarbeiter.SelectedValue == null)
+                if (CmbDetailsMitarbeiter.SelectedItem == null)
                 {
-                    MessageBox.Show("Bitte wählen Sie einen Mitarbeiter aus.", "Validierungsfehler", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    MessageBox.Show("Bitte wählen Sie einen Mitarbeiter aus.", "Validierungsfehler", 
+                                  MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
                 }
 
-                if (_isNewMode && string.IsNullOrEmpty(_selectedFilePath))
+                if (_isNewMode && string.IsNullOrWhiteSpace(_selectedFilePath))
                 {
-                    MessageBox.Show("Bitte wählen Sie eine Datei aus.", "Validierungsfehler", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    return;
-                }
+                    MessageBox.Show("Bitte wählen Sie eine Datei aus.", "Validierungsfehler", 
+                                  MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+                BtnSave.IsEnabled = false;
+                BtnSave.Content = "⏳ Speichern...";
 
                 if (_isNewMode)
                 {
-                    // Create new unterlage with file
-                    var createRequest = new CreateUnterlageWithFileRequest
+                    // Create new unterlage with file upload
+                    var mitarbeiter = (Mitarbeiter)CmbDetailsMitarbeiter.SelectedItem;
+                    var objekt = CmbDetailsObjekt.SelectedItem as Objekt;
+                    
+                    // Don't save "Alle Objekte" (-1) as the ObjektId
+                    int? objektId = (objekt != null && objekt.ObjektId != -1) ? objekt.ObjektId : null;
+                    
+                    var request = new CreateUnterlageWithFileRequest
                     {
-                        MitarbeiterId = (int)CmbDetailsMitarbeiter.SelectedValue,
+                        MitarbeiterId = mitarbeiter.MitarbeiterId,
+                        ObjektId = objektId,
                         Bezeichnung = TxtBezeichnung.Text,
-                        Kategorie = CmbDetailsKategorie.SelectedItem?.ToString(),
+                        Kategorie = string.IsNullOrWhiteSpace(TxtDetailsKategorie.Text) ? null : TxtDetailsKategorie.Text,
                         GueltigAb = DpGueltigAb.SelectedDate,
                         GueltigBis = DpGueltigBis.SelectedDate,
                         IstAktiv = ChkIstAktiv.IsChecked ?? true,
                         FilePath = _selectedFilePath
                     };
 
-                    var createResponse = await _unterlageService.CreateWithFileAsync(createRequest);
-                    if (createResponse.Success)
+                    var response = await _unterlageService.CreateWithFileAsync(request);
+                    
+                    if (response.Success)
                     {
-                        MessageBox.Show("Unterlage erfolgreich erstellt.", "Erfolg", MessageBoxButton.OK, MessageBoxImage.Information);
+                        MessageBox.Show("Unterlage erfolgreich hochgeladen!", "Erfolg", 
+                                      MessageBoxButton.OK, MessageBoxImage.Information);
                         await LoadUnterlagenAsync();
-                        ClearForm();
-                        DetailsPanel.Visibility = Visibility.Collapsed;
-                        ActionButtonsPanel.Visibility = Visibility.Collapsed;
+                        ClosePopup();
                     }
                     else
                     {
-                        MessageBox.Show(createResponse.Message ?? "Fehler beim Erstellen der Unterlage", "Fehler", MessageBoxButton.OK, MessageBoxImage.Error);
+                        MessageBox.Show(response.Message ?? "Fehler beim Hochladen der Unterlage", 
+                                      "Fehler", MessageBoxButton.OK, MessageBoxImage.Error);
                     }
                 }
                 else if (_isEditMode && _selectedUnterlage != null)
                 {
                     // Update existing unterlage
-                    var updatedUnterlage = new Unterlage
+                    var mitarbeiter = (Mitarbeiter)CmbDetailsMitarbeiter.SelectedItem;
+                    var objekt = CmbDetailsObjekt.SelectedItem as Objekt;
+                    
+                    // Don't save "Alle Objekte" (-1) as the ObjektId
+                    int? objektId = (objekt != null && objekt.ObjektId != -1) ? objekt.ObjektId : null;
+                    
+                    var response = await _unterlageService.UpdateAsync(_selectedUnterlage.UnterlageId, new Unterlage
                     {
                         UnterlageId = _selectedUnterlage.UnterlageId,
-                        MitarbeiterId = (int)CmbDetailsMitarbeiter.SelectedValue,
+                        MitarbeiterId = mitarbeiter.MitarbeiterId,
                         Bezeichnung = TxtBezeichnung.Text,
-                        Kategorie = CmbDetailsKategorie.SelectedItem?.ToString(),
+                        ObjektId = objektId,
+                        Kategorie = string.IsNullOrWhiteSpace(TxtDetailsKategorie.Text) ? null : TxtDetailsKategorie.Text,
                         GueltigAb = DpGueltigAb.SelectedDate,
                         GueltigBis = DpGueltigBis.SelectedDate,
-                        IstAktiv = ChkIstAktiv.IsChecked ?? true,
-                        Dateiname = _selectedUnterlage.Dateiname,
-                        Dateityp = _selectedUnterlage.Dateityp,
-                        Dateigroesse = _selectedUnterlage.Dateigroesse,
-                        ObjectKey = _selectedUnterlage.ObjectKey,
-                        Speicherpfad = _selectedUnterlage.Speicherpfad
-                    };
+                        IstAktiv = ChkIstAktiv.IsChecked ?? true
+                    });
 
-                    var updateResponse = await _unterlageService.UpdateAsync(_selectedUnterlage.UnterlageId, updatedUnterlage);
-                    if (updateResponse.Success)
+                    if (response.Success)
                     {
-                        MessageBox.Show("Unterlage erfolgreich aktualisiert.", "Erfolg", MessageBoxButton.OK, MessageBoxImage.Information);
+                        MessageBox.Show("Unterlage erfolgreich aktualisiert!", "Erfolg", 
+                                      MessageBoxButton.OK, MessageBoxImage.Information);
                         await LoadUnterlagenAsync();
-                        ClearForm();
-                        DetailsPanel.Visibility = Visibility.Collapsed;
-                        ActionButtonsPanel.Visibility = Visibility.Collapsed;
+                        ClosePopup();
                     }
                     else
                     {
-                        MessageBox.Show(updateResponse.Message ?? "Fehler beim Aktualisieren der Unterlage", "Fehler", MessageBoxButton.OK, MessageBoxImage.Error);
+                        MessageBox.Show(response.Message ?? "Fehler beim Aktualisieren der Unterlage", 
+                                      "Fehler", MessageBoxButton.OK, MessageBoxImage.Error);
                     }
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Fehler beim Speichern: {ex.Message}", "Fehler", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Fehler beim Speichern: {ex.Message}", "Fehler", 
+                              MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                BtnSave.IsEnabled = true;
+                BtnSave.Content = "💾 Speichern";
             }
         }
 
-        private void BtnCancel_Click(object sender, RoutedEventArgs e)
+        private void BtnSelectFile_Click(object sender, RoutedEventArgs e)
         {
-            ClearForm();
-            DetailsPanel.Visibility = Visibility.Collapsed;
-            ActionButtonsPanel.Visibility = Visibility.Collapsed;
-            TxtDetailsTitle.Text = "Unterlage Details";
+            var openFileDialog = new OpenFileDialog
+            {
+                Filter = "PDF Dateien (*.pdf)|*.pdf|Alle Dateien (*.*)|*.*",
+                Title = "Datei auswählen"
+            };
+
+            if (openFileDialog.ShowDialog() == true)
+            {
+                _selectedFilePath = openFileDialog.FileName;
+                TxtFilePath.Text = Path.GetFileName(_selectedFilePath);
+                
+                var fileInfo = new FileInfo(_selectedFilePath);
+                var fileSizeKB = fileInfo.Length / 1024.0;
+                var fileSizeMB = fileSizeKB / 1024.0;
+                
+                if (fileSizeMB >= 1)
+                {
+                    TxtFileInfo.Text = $"Größe: {fileSizeMB:F2} MB";
+                }
+                else
+                {
+                    TxtFileInfo.Text = $"Größe: {fileSizeKB:F2} KB";
+                }
+            }
         }
 
-        private void BtnPrevious_Click(object sender, RoutedEventArgs e)
+        private async void BtnDelete_Click(object sender, RoutedEventArgs e)
         {
-            // Implement pagination if needed
+            if (sender is Button button && button.Tag is Unterlage unterlage && _unterlageService != null)
+            {
+                var result = MessageBox.Show(
+                    $"Möchten Sie die Unterlage '{unterlage.Bezeichnung}' wirklich löschen?", 
+                                           "Löschen bestätigen", 
+                                           MessageBoxButton.YesNo, 
+                                           MessageBoxImage.Question);
+
+                if (result == MessageBoxResult.Yes)
+                {
+                    try
+                    {
+                        var response = await _unterlageService.DeleteAsync(unterlage.UnterlageId);
+                        if (response.Success)
+                        {
+                            MessageBox.Show("Unterlage erfolgreich gelöscht!", "Erfolg", 
+                                          MessageBoxButton.OK, MessageBoxImage.Information);
+                            await LoadUnterlagenAsync();
+                            
+                            // Reset PDF viewer
+                            EmptyStatePanel.Visibility = Visibility.Visible;
+                            PdfWebView.Visibility = Visibility.Collapsed;
+                            BtnDownloadPdf.Visibility = Visibility.Collapsed;
+                        }
+                        else
+                        {
+                            MessageBox.Show(response.Message ?? "Fehler beim Löschen der Unterlage", 
+                                          "Fehler", MessageBoxButton.OK, MessageBoxImage.Error);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"Fehler beim Löschen: {ex.Message}", "Fehler", 
+                                      MessageBoxButton.OK, MessageBoxImage.Error);
+                    }
+                }
+            }
         }
 
-        private void BtnNext_Click(object sender, RoutedEventArgs e)
+        private async void BtnDownloadPdf_Click(object sender, RoutedEventArgs e)
         {
-            // Implement pagination if needed
+            if (_selectedUnterlage == null || _unterlageService == null) return;
+
+            try
+            {
+                var saveFileDialog = new SaveFileDialog
+                {
+                    FileName = _selectedUnterlage.Dateiname,
+                    Filter = "PDF Dateien (*.pdf)|*.pdf|Alle Dateien (*.*)|*.*"
+                };
+
+                if (saveFileDialog.ShowDialog() == true)
+                {
+                    // Get download URL and download the file
+                    var downloadResponse = await _unterlageService.GetDownloadUrlAsync(_selectedUnterlage.UnterlageId);
+                    if (downloadResponse.Success && !string.IsNullOrEmpty(downloadResponse.DownloadUrl))
+                    {
+                        // Download logic would go here
+                        MessageBox.Show($"Download-URL erhalten: {downloadResponse.DownloadUrl}", 
+                                      "Info", MessageBoxButton.OK, MessageBoxImage.Information);
+                    }
+                    else
+                    {
+                        MessageBox.Show(downloadResponse.Message ?? "Fehler beim Abrufen der Download-URL", 
+                                      "Fehler", MessageBoxButton.OK, MessageBoxImage.Error);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Fehler beim Download: {ex.Message}", "Fehler", 
+                              MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private async void BtnFixObjektIds_Click(object sender, RoutedEventArgs e)
+        {
+            if (_unterlageService == null) return;
+
+            try
+            {
+                var result = MessageBox.Show(
+                    "Dies wird alle Unterlagen ohne ObjektId reparieren, indem die ObjektId vom zugehörigen Mitarbeiter gesetzt wird.\n\nDies ist nur für Administratoren verfügbar und sollte nur einmal ausgeführt werden.\n\nMöchten Sie fortfahren?",
+                    "Objekt-IDs reparieren",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Question);
+
+                if (result == MessageBoxResult.Yes)
+                {
+                    BtnFixObjektIds.IsEnabled = false;
+                    BtnFixObjektIds.Content = "⏳ Repariere...";
+
+                    var response = await _unterlageService.FixMissingObjektIdsAsync();
+
+                    if (response.Success)
+                    {
+                        MessageBox.Show($"✅ Erfolgreich repariert! {response.Data?.FixedCount ?? 0} Unterlagen wurden aktualisiert.", 
+                                      "Reparatur erfolgreich", 
+                                      MessageBoxButton.OK, MessageBoxImage.Information);
+
+                        // Refresh the data to show the fixed ObjektNames
+                        await LoadUnterlagenAsync();
+                    }
+                    else
+                    {
+                        MessageBox.Show($"❌ Fehler beim Reparieren: {response.Message}", 
+                                      "Reparatur fehlgeschlagen", 
+                                      MessageBoxButton.OK, MessageBoxImage.Error);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"❌ Fehler beim Reparieren der Objekt-IDs: {ex.Message}", 
+                              "Fehler", 
+                              MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                BtnFixObjektIds.IsEnabled = true;
+                BtnFixObjektIds.Content = "🔧 Objekt-IDs reparieren";
+            }
+        }
+
+        private async void BtnLoadData_Click(object sender, RoutedEventArgs e)
+        {
+            await LoadUnterlagenAsync();
+        }
+
+        private void CmbObjekt_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            // Update filter Mitarbeiter ComboBox based on selected Objekt
+            if (CmbObjekt.SelectedItem is Objekt selectedObjekt && _availableMitarbeiter.Count > 0)
+            {
+                var currentSelection = CmbFilterMitarbeiter.SelectedItem as Mitarbeiter;
+                
+                CmbFilterMitarbeiter.Items.Clear();
+                CmbFilterMitarbeiter.Items.Add(new Mitarbeiter
+                {
+                    MitarbeiterId = -1,
+                    Name = "Alle Mitarbeiter"
+                });
+
+                if (selectedObjekt.ObjektId == -1)
+                {
+                    // Show all Mitarbeiter
+                    foreach (var mitarbeiter in _availableMitarbeiter)
+                    {
+                        CmbFilterMitarbeiter.Items.Add(mitarbeiter);
+                    }
+                }
+                else
+                {
+                    // Filter Mitarbeiter by Objekt
+                    var filteredMitarbeiter = _availableMitarbeiter
+                        .Where(m => m.ObjektId == selectedObjekt.ObjektId)
+                        .ToList();
+
+                    foreach (var mitarbeiter in filteredMitarbeiter)
+                    {
+                        CmbFilterMitarbeiter.Items.Add(mitarbeiter);
+                    }
+                }
+
+                // Try to restore previous selection or default to "Alle"
+                if (currentSelection != null)
+                {
+                    var itemToSelect = CmbFilterMitarbeiter.Items.Cast<Mitarbeiter>()
+                        .FirstOrDefault(m => m.MitarbeiterId == currentSelection.MitarbeiterId);
+                    
+                    CmbFilterMitarbeiter.SelectedItem = itemToSelect ?? CmbFilterMitarbeiter.Items[0];
+                }
+                else
+                {
+                    CmbFilterMitarbeiter.SelectedIndex = 0;
+                }
+            }
+            
+            ApplyFilters();
+            UpdateRecordCount();
+        }
+
+        private void TxtKategorie_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            ApplyFilters();
+            UpdateRecordCount();
+        }
+
+        private void CmbFilterMitarbeiter_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            ApplyFilters();
+            UpdateRecordCount();
+        }
+
+        private void TxtSearch_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            ApplyFilters();
+            UpdateRecordCount();
+        }
+
+        private void BtnClearFilters_Click(object sender, RoutedEventArgs e)
+        {
+            // Clear all filters
+            TxtSearch.Text = string.Empty;
+            TxtKategorie.Text = string.Empty;
+            DpFilterVonDatum.SelectedDate = null;
+            DpFilterBisDatum.SelectedDate = null;
+
+            // Reset Objekt combobox to "Alle Objekte" (first item)
+            if (CmbObjekt.Items.Count > 0)
+            {
+                CmbObjekt.SelectedIndex = 0;
+            }
+
+            // Reset Mitarbeiter combobox to "Alle Mitarbeiter" (first item)
+            if (CmbFilterMitarbeiter.Items.Count > 0)
+            {
+                CmbFilterMitarbeiter.SelectedIndex = 0;
+            }
+
+            ApplyFilters();
+            UpdateRecordCount();
+        }
+
+        private async void DpFilterVonDatum_SelectedDateChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (_unterlageService != null && _allUnterlagen.Count > 0)
+            {
+                await LoadUnterlagenAsync();
+            }
+        }
+
+        private async void DpFilterBisDatum_SelectedDateChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (_unterlageService != null && _allUnterlagen.Count > 0)
+            {
+                await LoadUnterlagenAsync();
+            }
+        }
+
+        private void CmbDetailsMitarbeiter_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (_mitarbeiterService == null) return;
+
+            try
+            {
+                var selectedMitarbeiter = CmbDetailsMitarbeiter.SelectedItem as Mitarbeiter;
+
+                // Only auto-set Objekt if we're not loading details (to avoid overriding user selection)
+                if (!_isLoadingDetails && selectedMitarbeiter != null)
+                {
+                    // Find the corresponding Objekt for this Mitarbeiter
+                    if (selectedMitarbeiter.ObjektId.HasValue)
+                    {
+                        // Find the Objekt in the dropdown and select it
+                        foreach (var item in CmbDetailsObjekt.Items)
+                        {
+                            if (item is Objekt obj && obj.ObjektId == selectedMitarbeiter.ObjektId.Value)
+                            {
+                                CmbDetailsObjekt.SelectedItem = item;
+                                break;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        // Mitarbeiter has no Objekt, select "Kein spezifisches Objekt"
+                        if (CmbDetailsObjekt.Items.Count > 0)
+                        {
+                            CmbDetailsObjekt.SelectedIndex = 0;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error auto-setting Objekt from Mitarbeiter: {ex.Message}");
+            }
+        }
+
+        private async void BtnRefresh_Click(object sender, RoutedEventArgs e)
+        {
+            await LoadDataAsync();
+        }
+
+        private void CmbDetailsObjekt_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            // Repopulate the Mitarbeiter dropdown in the details popup based on selected Objekt
+            if (_availableMitarbeiter.Count == 0)
+            {
+                return;
+            }
+
+            var selectedObjekt = CmbDetailsObjekt.SelectedItem as Objekt;
+            var filteredMitarbeiter = _availableMitarbeiter.AsEnumerable();
+
+            if (selectedObjekt != null && selectedObjekt.ObjektId != -1)
+            {
+                filteredMitarbeiter = filteredMitarbeiter.Where(m => m.ObjektId == selectedObjekt.ObjektId);
+            }
+
+            var previouslySelected = CmbDetailsMitarbeiter.SelectedItem as Mitarbeiter;
+            CmbDetailsMitarbeiter.Items.Clear();
+            foreach (var m in filteredMitarbeiter)
+            {
+                CmbDetailsMitarbeiter.Items.Add(m);
+            }
+
+            if (_isLoadingDetails && previouslySelected != null)
+            {
+                // Try to keep previous selection when loading existing details
+                foreach (var item in CmbDetailsMitarbeiter.Items)
+                {
+                    if (item is Mitarbeiter m && m.MitarbeiterId == previouslySelected.MitarbeiterId)
+                    {
+                        CmbDetailsMitarbeiter.SelectedItem = item;
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                CmbDetailsMitarbeiter.SelectedIndex = -1;
+            }
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;
@@ -716,4 +1061,5 @@ namespace FehlzeitApp.Views
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
     }
+
 }

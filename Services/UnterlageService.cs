@@ -14,7 +14,7 @@ namespace FehlzeitApp.Services
         {
         }
 
-        public async Task<ApiResponse<List<Unterlage>>> GetAllAsync(int? mitarbeiterId = null, string? kategorie = null)
+        public async Task<ApiResponse<List<Unterlage>>> GetAllAsync(int? mitarbeiterId = null, string? kategorie = null, DateTime? vonDatum = null, DateTime? bisDatum = null)
         {
             try
             {
@@ -23,6 +23,10 @@ namespace FehlzeitApp.Services
                     queryParams.Add($"mitarbeiterId={mitarbeiterId.Value}");
                 if (!string.IsNullOrEmpty(kategorie))
                     queryParams.Add($"kategorie={Uri.EscapeDataString(kategorie)}");
+                if (vonDatum.HasValue)
+                    queryParams.Add($"vonDatum={vonDatum.Value:yyyy-MM-dd}");
+                if (bisDatum.HasValue)
+                    queryParams.Add($"bisDatum={bisDatum.Value:yyyy-MM-dd}");
 
                 var queryString = queryParams.Count > 0 ? "?" + string.Join("&", queryParams) : "";
                 var endpoint = $"unterlagen{queryString}";
@@ -93,6 +97,8 @@ namespace FehlzeitApp.Services
                 var updateRequest = new
                 {
                     UnterlageId = unterlageId,
+                    MitarbeiterId = unterlage.MitarbeiterId,
+                    ObjektId = unterlage.ObjektId,
                     Bezeichnung = unterlage.Bezeichnung,
                     Kategorie = unterlage.Kategorie,
                     GueltigAb = unterlage.GueltigAb,
@@ -129,7 +135,7 @@ namespace FehlzeitApp.Services
         }
 
         // Get filtered unterlagen using the /filter endpoint
-        public async Task<ApiResponse<List<Unterlage>>> GetFilteredAsync(int? mitarbeiterId = null, string? kategorie = null)
+        public async Task<ApiResponse<List<Unterlage>>> GetFilteredAsync(int? mitarbeiterId = null, string? kategorie = null, DateTime? vonDatum = null, DateTime? bisDatum = null)
         {
             try
             {
@@ -138,6 +144,10 @@ namespace FehlzeitApp.Services
                     queryParams.Add($"mitarbeiterId={mitarbeiterId.Value}");
                 if (!string.IsNullOrEmpty(kategorie))
                     queryParams.Add($"kategorie={Uri.EscapeDataString(kategorie)}");
+                if (vonDatum.HasValue)
+                    queryParams.Add($"vonDatum={vonDatum.Value:yyyy-MM-dd}");
+                if (bisDatum.HasValue)
+                    queryParams.Add($"bisDatum={bisDatum.Value:yyyy-MM-dd}");
 
                 var queryString = queryParams.Count > 0 ? "?" + string.Join("&", queryParams) : "";
                 var endpoint = $"unterlagen/filter{queryString}";
@@ -161,25 +171,58 @@ namespace FehlzeitApp.Services
             try
             {
                 var endpoint = $"unterlagen/{unterlageId}/download-url?expiryMinutes={expiryMinutes}";
-                var response = await GetAsync<DownloadUrlResponse>(endpoint);
+                var fullUrl = $"{_baseUrl}/{endpoint}";
                 
-                if (response.Success && response.Data != null)
+                System.Diagnostics.Debug.WriteLine($"[UnterlageService] Direct HTTP call to: {fullUrl}");
+                
+                // Make direct HTTP call to avoid ApiResponse wrapping issues
+                var httpResponse = await _httpClient.GetAsync(fullUrl);
+                var content = await httpResponse.Content.ReadAsStringAsync();
+                
+                System.Diagnostics.Debug.WriteLine($"[UnterlageService] HTTP Status: {httpResponse.StatusCode}");
+                System.Diagnostics.Debug.WriteLine($"[UnterlageService] Raw Response: {content}");
+                
+                if (httpResponse.IsSuccessStatusCode)
                 {
-                    return response.Data;
+                    // Parse the JSON directly
+                    var jsonDoc = System.Text.Json.JsonDocument.Parse(content);
+                    var root = jsonDoc.RootElement;
+                    
+                    // Check if success field exists and is true
+                    var success = root.TryGetProperty("success", out var successProp) && successProp.GetBoolean();
+                    var message = root.TryGetProperty("message", out var msgProp) ? msgProp.GetString() : "";
+                    var downloadUrl = root.TryGetProperty("downloadUrl", out var urlProp) ? urlProp.GetString() : null;
+                    var fileName = root.TryGetProperty("fileName", out var fileProp) ? fileProp.GetString() : null;
+                    var expiresIn = root.TryGetProperty("expiresInMinutes", out var expProp) ? expProp.GetInt32() : expiryMinutes;
+                    
+                    System.Diagnostics.Debug.WriteLine($"[UnterlageService] Parsed - Success: {success}, URL: {downloadUrl}");
+                    
+                    return new DownloadUrlResponse
+                    {
+                        Success = success,
+                        Message = message,
+                        DownloadUrl = downloadUrl,
+                        FileName = fileName,
+                        ExpiresInMinutes = expiresIn
+                    };
                 }
-                
-                return new DownloadUrlResponse
+                else
                 {
-                    Success = false,
-                    Message = response.Message ?? "Fehler beim Abrufen der Download-URL"
-                };
+                    return new DownloadUrlResponse
+                    {
+                        Success = false,
+                        Message = $"HTTP Error: {httpResponse.StatusCode}"
+                    };
+                }
             }
             catch (Exception ex)
             {
+                System.Diagnostics.Debug.WriteLine($"[UnterlageService] EXCEPTION: {ex.Message}");
+                
                 return new DownloadUrlResponse
                 {
                     Success = false,
-                    Message = $"Fehler beim Abrufen der Download-URL: {ex.Message}"
+                    Message = $"Fehler: {ex.Message}"
                 };
             }
         }
@@ -189,6 +232,28 @@ namespace FehlzeitApp.Services
         {
             // Use the base URL from the configuration
             return $"{_baseUrl}/unterlagen/{unterlageId}/view";
+        }
+
+        // Helper to get a URL suitable for inline PDF display
+        public async Task<string> GetPdfDisplayUrlAsync(int unterlageId)
+        {
+            try
+            {
+                // Prefer pre-signed URL that we can tune for inline viewing
+                var response = await GetDownloadUrlAsync(unterlageId);
+                if (response.Success && !string.IsNullOrEmpty(response.DownloadUrl))
+                {
+                    return response.DownloadUrl;
+                }
+
+                // Fallback to backend view endpoint (requires app auth)
+                return GetViewUrl(unterlageId);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[UnterlageService] Error getting PDF display URL: {ex.Message}");
+                return string.Empty;
+            }
         }
 
         // Create unterlage with file upload
@@ -215,6 +280,10 @@ namespace FehlzeitApp.Services
                 
                 // Add form fields
                 form.Add(new StringContent(request.MitarbeiterId.ToString()), "MitarbeiterId");
+                
+                if (request.ObjektId.HasValue)
+                    form.Add(new StringContent(request.ObjektId.Value.ToString()), "ObjektId");
+                
                 form.Add(new StringContent(request.Bezeichnung), "Bezeichnung");
                 
                 if (!string.IsNullOrEmpty(request.Kategorie))
@@ -240,23 +309,19 @@ namespace FehlzeitApp.Services
             }
         }
 
-        // Get unterlagen by employee ID
-        public async Task<ApiResponse<List<Unterlage>>> GetByMitarbeiterAsync(int mitarbeiterId, string? kategorie = null)
+        // Fix missing ObjektId for existing Unterlagen
+        public async Task<ApiResponse<FixObjektIdsResponse>> FixMissingObjektIdsAsync()
         {
             try
             {
-                var queryString = !string.IsNullOrEmpty(kategorie) ? $"?kategorie={Uri.EscapeDataString(kategorie)}" : "";
-                var endpoint = $"unterlagen/mitarbeiter/{mitarbeiterId}{queryString}";
-
-                return await GetAsync<List<Unterlage>>(endpoint);
+                return await PostAsync<FixObjektIdsResponse>("unterlagen/fix-objekt-ids", null);
             }
             catch (Exception ex)
             {
-                return new ApiResponse<List<Unterlage>>
+                return new ApiResponse<FixObjektIdsResponse>
                 {
                     Success = false,
-                    Message = $"Fehler beim Laden der Mitarbeiter-Unterlagen: {ex.Message}",
-                    Data = new List<Unterlage>()
+                    Message = $"Fehler beim Beheben der ObjektIds: {ex.Message}"
                 };
             }
         }
@@ -275,6 +340,7 @@ namespace FehlzeitApp.Services
     public class CreateUnterlageWithFileRequest
     {
         public int MitarbeiterId { get; set; }
+        public int? ObjektId { get; set; }
         public string Bezeichnung { get; set; } = string.Empty;
         public string? Kategorie { get; set; }
         public DateTime? GueltigAb { get; set; }

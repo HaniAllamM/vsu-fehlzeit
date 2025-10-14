@@ -29,7 +29,7 @@ namespace FehlzeitApp.Services
         {
             try
             {
-                var url = $"{_baseUrl}/api/benachrichtigungen";
+                var url = $"{_baseUrl}/benachrichtigungen";
                 var queryParams = new List<string>();
 
                 if (isRead.HasValue)
@@ -93,7 +93,7 @@ namespace FehlzeitApp.Services
         {
             try
             {
-                var url = $"{_baseUrl}/api/benachrichtigungen/unread-count";
+                var url = $"{_baseUrl}/benachrichtigungen/unread-count";
 
                 using var request = new HttpRequestMessage(HttpMethod.Get, url);
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _authService.Token);
@@ -125,7 +125,7 @@ namespace FehlzeitApp.Services
         {
             try
             {
-                var url = $"{_baseUrl}/api/benachrichtigungen/{benachrichtigungId}/mark-read";
+                var url = $"{_baseUrl}/benachrichtigungen/{benachrichtigungId}/mark-read";
 
                 using var request = new HttpRequestMessage(HttpMethod.Put, url);
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _authService.Token);
@@ -157,7 +157,7 @@ namespace FehlzeitApp.Services
         {
             try
             {
-                var url = $"{_baseUrl}/api/benachrichtigungen/mark-all-read";
+                var url = $"{_baseUrl}/benachrichtigungen/mark-all-read";
 
                 using var request = new HttpRequestMessage(HttpMethod.Put, url);
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _authService.Token);
@@ -189,7 +189,7 @@ namespace FehlzeitApp.Services
         {
             try
             {
-                var url = $"{_baseUrl}/api/benachrichtigungen/{benachrichtigungId}";
+                var url = $"{_baseUrl}/benachrichtigungen/{benachrichtigungId}";
 
                 using var request = new HttpRequestMessage(HttpMethod.Delete, url);
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _authService.Token);
@@ -221,7 +221,7 @@ namespace FehlzeitApp.Services
         {
             try
             {
-                var url = $"{_baseUrl}/api/benachrichtigungen/all";
+                var url = $"{_baseUrl}/benachrichtigungen/all";
 
                 using var request = new HttpRequestMessage(HttpMethod.Delete, url);
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _authService.Token);
@@ -248,22 +248,30 @@ namespace FehlzeitApp.Services
     }
 
     /// <summary>
-    /// Notification model for WPF (API response)
+    /// Notification model for WPF (API response) - matches backend German property names
     /// </summary>
     public class BenachrichtigungDto
     {
-        public int BenachrichtigungId { get; set; }
-        public int UserId { get; set; }
-        public string Title { get; set; } = string.Empty;
-        public string Message { get; set; } = string.Empty;
-        public string Type { get; set; } = "Info";
-        public bool IsRead { get; set; }
+        public int Id { get; set; }
+        public int EmpfaengerId { get; set; }
+        public int? SenderId { get; set; }
+        public string Typ { get; set; } = string.Empty;
+        public string Titel { get; set; } = string.Empty;
+        public string Nachricht { get; set; } = string.Empty;
+        public string? Link { get; set; }
+        public bool Gelesen { get; set; }
+        public DateTime Erstellungsdatum { get; set; }
+        public DateTime? GelesenAm { get; set; }
+        
+        // Related Entity Info
         public string? RelatedEntityType { get; set; }
         public int? RelatedEntityId { get; set; }
-        public string? ActionUrl { get; set; }
-        public DateTime CreatedAt { get; set; }
-        public DateTime? ReadAt { get; set; }
-        public DateTime LastModifiedAt { get; set; }
+        
+        // Employee and Project Info
+        public string? MitarbeiterName { get; set; }
+        public int? MitarbeiterId { get; set; }
+        public string? ObjektName { get; set; }
+        public int? ObjektId { get; set; }
     }
 
 }

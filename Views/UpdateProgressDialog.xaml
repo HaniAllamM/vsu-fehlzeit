@@ -1,0 +1,37 @@
+<Window x:Class="FehlzeitApp.Views.UpdateProgressDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Update wird heruntergeladen..." 
+        Height="200" 
+        Width="400"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize">
+    
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="20"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="10"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        
+        <TextBlock Grid.Row="0" 
+                   Text="Update wird heruntergeladen..." 
+                   FontSize="16" 
+                   FontWeight="Bold" 
+                   HorizontalAlignment="Center"/>
+        
+        <ProgressBar Grid.Row="2" 
+                    Name="ProgressBar" 
+                    Height="20" 
+                    Value="0" 
+                    Maximum="100"/>
+        
+        <TextBlock Grid.Row="4" 
+                   Name="ProgressText" 
+                   Text="0%" 
+                   HorizontalAlignment="Center" 
+                   FontSize="12"/>
+    </Grid>
+</Window>

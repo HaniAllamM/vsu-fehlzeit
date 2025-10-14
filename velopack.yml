@@ -1,0 +1,6 @@
+appId: "com.haniallam.fehlzeitapp"
+appVersion: "1.0.0"
+appName: "FehlzeitApp"
+entryExecutable: "FehlzeitApp.exe"
+publisherName: "Hani Allam"
+url: "https://github.com/HaniAllamM/vsu-fehlzeit/releases/latest/download/"

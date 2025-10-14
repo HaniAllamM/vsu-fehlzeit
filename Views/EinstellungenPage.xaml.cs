@@ -27,10 +27,8 @@ namespace FehlzeitApp.Views
         private List<ImportMitarbeiterItem> _importData_Mitarbeiter = new();
         private string _selectedFilePath_Mitarbeiter = string.Empty;
         
-        // Benutzer import fields
+        // User service for User Management (CRUD)
         private UserService? _userService;
-        private List<ImportBenutzerItem> _importData_Benutzer = new();
-        private string _selectedFilePath_Benutzer = string.Empty;
 
         public EinstellungenPage(AuthService authService)
         {
@@ -43,6 +41,13 @@ namespace FehlzeitApp.Views
         {
             await InitializeServicesAsync();
             CheckAdminAccess();
+            
+            // Load users for the management tab (only for admins)
+            bool isAdmin = _authService.CurrentUser?.IsAdmin ?? false;
+            if (isAdmin)
+            {
+                await LoadUsersAsync();
+            }
         }
 
         private async Task InitializeServicesAsync()
@@ -70,15 +75,54 @@ namespace FehlzeitApp.Views
             
             if (!isAdmin)
             {
-                // Disable all import sections since they're now in tabs
-                if (ImportSection != null)
+                // Hide ALL tabs for non-admin users
+                if (ObjektImportTab != null)
                 {
-                    ImportSection.IsEnabled = false;
-                    ImportSection.Opacity = 0.5;
+                    ObjektImportTab.Visibility = Visibility.Collapsed;
                 }
                 
-                // Show warning message in the main content area
+                if (MitarbeiterImportTab != null)
+                {
+                    MitarbeiterImportTab.Visibility = Visibility.Collapsed;
+                }
+                
+                if (UserManagementTab != null)
+                {
+                    UserManagementTab.Visibility = Visibility.Collapsed;
+                }
+                
+                // Disable the entire TabControl
+                if (MainTabControl != null)
+                {
+                    MainTabControl.IsEnabled = false;
+                }
+                
+                // Show warning message
                 ShowAdminWarning();
+            }
+            else
+            {
+                // Show ALL tabs for admin users
+                if (ObjektImportTab != null)
+                {
+                    ObjektImportTab.Visibility = Visibility.Visible;
+                }
+                
+                if (MitarbeiterImportTab != null)
+                {
+                    MitarbeiterImportTab.Visibility = Visibility.Visible;
+                }
+                
+                if (UserManagementTab != null)
+                {
+                    UserManagementTab.Visibility = Visibility.Visible;
+                }
+                
+                // Enable the TabControl
+                if (MainTabControl != null)
+                {
+                    MainTabControl.IsEnabled = true;
+                }
             }
         }
 
@@ -653,296 +697,115 @@ namespace FehlzeitApp.Views
             ChkClearExisting_Mitarbeiter.IsChecked = false;
         }
 
-        // ==================== BENUTZER IMPORT METHODS ====================
+        #region User Management (CRUD)
 
-        private void BtnSelectFile_Benutzer_Click(object sender, RoutedEventArgs e)
+        private List<UserDto> _allUsers = new();
+        private List<UserDto> _filteredUsers = new();
+
+        private async void BtnAddUser_Click(object sender, RoutedEventArgs e)
         {
-            var openFileDialog = new OpenFileDialog
+            var dialog = new UserEditDialog(null, _userService);
+            if (dialog.ShowDialog() == true)
             {
-                Title = "Excel-Datei auswählen",
-                Filter = "Excel Dateien (*.xlsx)|*.xlsx|Alle Dateien (*.*)|*.*",
-                FilterIndex = 1
-            };
-
-            if (openFileDialog.ShowDialog() == true)
-            {
-                _selectedFilePath_Benutzer = openFileDialog.FileName;
-                TxtSelectedFile_Benutzer.Text = Path.GetFileName(_selectedFilePath_Benutzer);
-                
-                LoadBenutzerExcelFile(_selectedFilePath_Benutzer);
+                await LoadUsersAsync();
             }
         }
 
-        private void LoadBenutzerExcelFile(string filePath)
+        private async void BtnEditUser_Click(object sender, RoutedEventArgs e)
         {
-            try
+            if (sender is Button button && button.DataContext is UserDto user)
             {
-                _importData_Benutzer.Clear();
-                
-                using (var workbook = new XLWorkbook(filePath))
+                var dialog = new UserEditDialog(user, _userService);
+                if (dialog.ShowDialog() == true)
                 {
-                    var worksheet = workbook.Worksheet(1);
-                    var rows = worksheet.RangeUsed().RowsUsed().Skip(1); // Skip header
-                    
-                    foreach (var row in rows)
-                    {
-                        var username = row.Cell(1).GetString().Trim();
-                        var email = row.Cell(2).GetString().Trim();
-                        var role = row.Cell(3).GetString().Trim();
-                        var isActive = row.Cell(4).GetString().Trim();
-                        var password = row.Cell(5).GetString().Trim(); // Optional default password
-                        
-                        if (!string.IsNullOrWhiteSpace(username) && !string.IsNullOrWhiteSpace(email))
-                        {
-                            _importData_Benutzer.Add(new ImportBenutzerItem
-                            {
-                                Username = username,
-                                Email = email,
-                                Role = string.IsNullOrWhiteSpace(role) ? "User" : role,
-                                IsActive = isActive == "1" || isActive.ToLower() == "true" || isActive.ToLower() == "aktiv",
-                                Password = string.IsNullOrWhiteSpace(password) ? "DefaultPassword123!" : password
-                            });
-                        }
-                    }
+                    await LoadUsersAsync();
                 }
-                
-                if (_importData_Benutzer.Count > 0)
-                {
-                    PreviewDataGrid_Benutzer.ItemsSource = _importData_Benutzer;
-                    PreviewDataGrid_Benutzer.Visibility = Visibility.Visible;
-                    EmptyState_Benutzer.Visibility = Visibility.Collapsed;
-                    
-                    TxtRecordCount_Benutzer.Text = $"{_importData_Benutzer.Count} Benutzer geladen";
-                    BtnValidate_Benutzer.IsEnabled = true;
-                    
-                    ValidateBenutzerData();
-                }
-                else
-                {
-                    MessageBox.Show("Keine Daten in der Excel-Datei gefunden.", 
-                                  "Warnung", 
+            }
+        }
+
+        // Password reset button removed - users must change their own password
+        // Admin cannot reset passwords to maintain security - users use the 🔑 button in main window
+        // Method kept but disabled to avoid build errors if referenced elsewhere
+        private async void BtnResetPassword_Click(object sender, RoutedEventArgs e)
+        {
+            await Task.CompletedTask; // Suppress async warning
+            MessageBox.Show(
+                "Passwort-Reset durch Admin wurde aus Sicherheitsgründen entfernt.\n\n" +
+                "Benutzer können ihr Passwort selbst über die Schaltfläche 🔑 im Hauptmenü ändern.",
+                "Funktion deaktiviert",
                                   MessageBoxButton.OK, 
-                                  MessageBoxImage.Warning);
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Fehler beim Lesen der Excel-Datei: {ex.Message}\n\nStellen Sie sicher, dass die Datei das richtige Format hat:\nSpalte A: Benutzername\nSpalte B: Email\nSpalte C: Rolle (Admin/User)\nSpalte D: Aktiv (1/0 oder true/false)\nSpalte E: Passwort (optional)", 
-                              "Fehler", 
-                              MessageBoxButton.OK, 
-                              MessageBoxImage.Error);
-                
-                ResetBenutzerUI();
-            }
+                MessageBoxImage.Information);
         }
 
-        private void BtnValidate_Benutzer_Click(object sender, RoutedEventArgs e)
+        private async void TxtSearchUser_TextChanged(object sender, TextChangedEventArgs e)
         {
-            ValidateBenutzerData();
-        }
-
-        private void ValidateBenutzerData()
-        {
-            try
-            {
-                var errors = new List<string>();
-                
-                // Check for empty usernames
-                var emptyUsernames = _importData_Benutzer.Where(b => string.IsNullOrWhiteSpace(b.Username)).Count();
-                if (emptyUsernames > 0)
-                {
-                    errors.Add($"❌ {emptyUsernames} Benutzer mit leerem Benutzernamen gefunden");
-                }
-                
-                // Check for empty emails
-                var emptyEmails = _importData_Benutzer.Where(b => string.IsNullOrWhiteSpace(b.Email)).Count();
-                if (emptyEmails > 0)
-                {
-                    errors.Add($"❌ {emptyEmails} Benutzer mit leerer Email gefunden");
-                }
-                
-                // Check for duplicate usernames
-                var duplicateUsernames = _importData_Benutzer
-                    .GroupBy(b => b.Username.ToLower())
-                    .Where(g => g.Count() > 1)
-                    .Select(g => g.Key)
-                    .ToList();
-                
-                if (duplicateUsernames.Any())
-                {
-                    errors.Add($"❌ {duplicateUsernames.Count} doppelte Benutzernamen gefunden");
-                }
-                
-                // Check for duplicate emails
-                var duplicateEmails = _importData_Benutzer
-                    .GroupBy(b => b.Email.ToLower())
-                    .Where(g => g.Count() > 1)
-                    .Select(g => g.Key)
-                    .ToList();
-                
-                if (duplicateEmails.Any())
-                {
-                    errors.Add($"❌ {duplicateEmails.Count} doppelte Email-Adressen gefunden");
-                }
-                
-                // Check for invalid email formats
-                var invalidEmails = _importData_Benutzer
-                    .Where(b => !string.IsNullOrWhiteSpace(b.Email) && !b.Email.Contains("@"))
-                    .Count();
-                
-                if (invalidEmails > 0)
-                {
-                    errors.Add($"❌ {invalidEmails} Benutzer mit ungültigen Email-Adressen");
-                }
-                
-                // Check for invalid roles
-                var validRoles = new[] { "admin", "user" };
-                var invalidRoles = _importData_Benutzer
-                    .Where(b => !validRoles.Contains(b.Role.ToLower()))
-                    .Count();
-                
-                if (invalidRoles > 0)
-                {
-                    errors.Add($"❌ {invalidRoles} Benutzer mit ungültigen Rollen (erlaubt: Admin, User)");
-                }
-                
-                // Show results
-                ValidationPanel_Benutzer.Visibility = Visibility.Visible;
-                
-                if (errors.Count == 0)
-                {
-                    ValidationPanel_Benutzer.Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(219, 234, 254));
-                    ValidationPanel_Benutzer.BorderBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(59, 130, 246));
-                    TxtValidationTitle_Benutzer.Text = "✓ Validierung erfolgreich";
-                    TxtValidationTitle_Benutzer.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(30, 64, 175));
-                    TxtValidationMessage_Benutzer.Text = $"Alle {_importData_Benutzer.Count} Benutzer sind gültig und bereit zum Importieren.";
-                    TxtValidationMessage_Benutzer.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(30, 58, 138));
-                    
-                    BtnImport_Benutzer.IsEnabled = true;
-                }
-                else
-                {
-                    ValidationPanel_Benutzer.Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(254, 242, 242));
-                    ValidationPanel_Benutzer.BorderBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(239, 68, 68));
-                    TxtValidationTitle_Benutzer.Text = "❌ Validierungsfehler";
-                    TxtValidationTitle_Benutzer.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(220, 38, 38));
-                    TxtValidationMessage_Benutzer.Text = string.Join("\n", errors);
-                    TxtValidationMessage_Benutzer.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(153, 27, 27));
-                    
-                    BtnImport_Benutzer.IsEnabled = false;
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Fehler bei der Validierung: {ex.Message}", 
-                              "Fehler", 
-                              MessageBoxButton.OK, 
-                              MessageBoxImage.Error);
-            }
-        }
-
-        private async void BtnImport_Benutzer_Click(object sender, RoutedEventArgs e)
-        {
-            if (_userService == null || _importData_Benutzer.Count == 0)
-            {
-                MessageBox.Show("Keine Daten zum Importieren vorhanden.", 
-                              "Warnung", 
-                              MessageBoxButton.OK, 
-                              MessageBoxImage.Warning);
-                return;
-            }
-
-            var confirmMessage = ChkClearExisting_Benutzer.IsChecked == true
-                ? $"ACHTUNG: Alle bestehenden Benutzer werden gelöscht!\n\nMöchten Sie wirklich {_importData_Benutzer.Count} Benutzer importieren?"
-                : $"Möchten Sie {_importData_Benutzer.Count} Benutzer importieren?";
+            if (TxtSearchUser == null || BtnClearSearch == null) return;
             
-            var result = MessageBox.Show(confirmMessage, 
-                                        "Import bestätigen", 
-                                        MessageBoxButton.YesNo, 
-                                        MessageBoxImage.Question);
+            BtnClearSearch.Visibility = string.IsNullOrWhiteSpace(TxtSearchUser.Text) ? Visibility.Collapsed : Visibility.Visible;
+            FilterUsers();
+        }
 
-            if (result != MessageBoxResult.Yes)
+        private void BtnClearSearch_Click(object sender, RoutedEventArgs e)
+        {
+            if (TxtSearchUser != null)
             {
-                return;
+                TxtSearchUser.Text = string.Empty;
             }
+        }
 
-            try
+        private void FilterUsers()
+        {
+            if (UsersDataGrid == null || TxtSearchUser == null) return;
+
+            var searchTerm = TxtSearchUser.Text?.ToLower() ?? "";
+            
+            if (string.IsNullOrWhiteSpace(searchTerm))
             {
-                BtnImport_Benutzer.IsEnabled = false;
-                BtnValidate_Benutzer.IsEnabled = false;
-                BtnSelectFile_Benutzer.IsEnabled = false;
-                
-                LogSection.Visibility = Visibility.Visible;
-                TxtImportLog.Text = "🔄 Benutzer-Import wird gestartet...\n";
-                TxtImportLog.Text += $"📊 Anzahl Benutzer: {_importData_Benutzer.Count}\n";
-                TxtImportLog.Text += $"🗑️ Bestehende löschen: {ChkClearExisting_Benutzer.IsChecked}\n\n";
-                
-                TxtImportLog.Text += $"📤 Sende Daten an Server...\n";
-                
-                var importResult = await _userService.BulkImportAsync(_importData_Benutzer, ChkClearExisting_Benutzer.IsChecked == true);
-                
-                TxtImportLog.Text += $"📥 Antwort erhalten: Success={importResult.Success}\n";
-                
-                if (importResult.Success)
-                {
-                    TxtImportLog.Text += $"✓ Erfolgreich: {importResult.InsertedCount} Benutzer importiert\n";
-                    TxtImportLog.Text += $"✓ {importResult.Message}\n";
-                    
-                    MessageBox.Show($"Import erfolgreich!\n\n{importResult.InsertedCount} Benutzer wurden importiert.", 
-                                  "Erfolg", 
-                                  MessageBoxButton.OK, 
-                                  MessageBoxImage.Information);
-                    
-                    ResetBenutzerUI();
+                _filteredUsers = new List<UserDto>(_allUsers);
                 }
                 else
                 {
-                    TxtImportLog.Text += $"❌ Fehler: {importResult.Message}\n";
-                    TxtImportLog.Text += $"❌ Eingefügte: {importResult.InsertedCount}\n";
-                    TxtImportLog.Text += $"❌ Fehleranzahl: {importResult.ErrorCount}\n";
-                    
-                    if (importResult.Errors != null && importResult.Errors.Count > 0)
-                    {
-                        TxtImportLog.Text += "\n❌ Fehlerdetails:\n";
-                        TxtImportLog.Text += string.Join("\n", importResult.Errors.Select(e => $"  - {e}"));
-                    }
-                    
-                    MessageBox.Show($"Import fehlgeschlagen!\n\n{importResult.Message}\n\nFehler: {importResult.ErrorCount}", 
-                                  "Fehler", 
-                                  MessageBoxButton.OK, 
-                                  MessageBoxImage.Error);
+                _filteredUsers = _allUsers.Where(u =>
+                    (u.Username?.ToLower().Contains(searchTerm) ?? false) ||
+                    (u.Email?.ToLower().Contains(searchTerm) ?? false) ||
+                    (u.FirstName?.ToLower().Contains(searchTerm) ?? false) ||
+                    (u.LastName?.ToLower().Contains(searchTerm) ?? false)
+                ).ToList();
+            }
+
+            UsersDataGrid.ItemsSource = null;
+            UsersDataGrid.ItemsSource = _filteredUsers;
+        }
+
+        public async Task LoadUsersAsync()
+        {
+            try
+            {
+                if (_userService == null)
+                {
+                    MessageBox.Show("UserService ist nicht initialisiert.", "Fehler", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+                var response = await _userService.GetAllUsersAsync();
+                
+                if (response.Success && response.Data != null)
+                {
+                    _allUsers = response.Data;
+                    FilterUsers();
+                }
+                else
+                {
+                    MessageBox.Show($"Fehler beim Laden der Benutzer: {response.Message}", 
+                                  "Fehler", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
             catch (Exception ex)
             {
-                TxtImportLog.Text += $"❌ Exception: {ex.Message}\n";
-                
-                MessageBox.Show($"Fehler beim Import: {ex.Message}\n\nDetails im Log anzeigen.", 
-                              "Fehler", 
-                              MessageBoxButton.OK, 
-                              MessageBoxImage.Error);
-            }
-            finally
-            {
-                BtnImport_Benutzer.IsEnabled = true;
-                BtnValidate_Benutzer.IsEnabled = true;
-                BtnSelectFile_Benutzer.IsEnabled = true;
+                MessageBox.Show($"Fehler: {ex.Message}", "Fehler", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
-        private void ResetBenutzerUI()
-        {
-            _importData_Benutzer.Clear();
-            _selectedFilePath_Benutzer = string.Empty;
-            TxtSelectedFile_Benutzer.Text = "Keine Datei ausgewählt";
-            PreviewDataGrid_Benutzer.ItemsSource = null;
-            PreviewDataGrid_Benutzer.Visibility = Visibility.Collapsed;
-            EmptyState_Benutzer.Visibility = Visibility.Visible;
-            ValidationPanel_Benutzer.Visibility = Visibility.Collapsed;
-            TxtRecordCount_Benutzer.Text = "0 Benutzer geladen";
-            BtnValidate_Benutzer.IsEnabled = false;
-            BtnImport_Benutzer.IsEnabled = false;
-            ChkClearExisting_Benutzer.IsChecked = false;
-        }
+        #endregion
     }
 }

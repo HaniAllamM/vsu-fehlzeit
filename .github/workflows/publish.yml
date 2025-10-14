@@ -1,0 +1,48 @@
+name: Build and Publish FehlzeitApp
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'  # example: v1.0.1
+  workflow_dispatch:  # Allow manual triggering
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Install Velopack
+        run: dotnet tool install -g Velopack
+
+      - name: Build FehlzeitApp
+        run: |
+          dotnet publish ./FehlzeitApp.csproj -c Release --self-contained true -r win-x64 -o ./bin/Release/net9.0-windows/win-x64/publish
+
+      - name: Package with Velopack
+        run: |
+          vpk pack -p ./bin/Release/net9.0-windows/win-x64/publish -o ./dist --platform win-x64
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ./dist/*
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          body: |
+            ## FehlzeitApp ${{ github.ref_name }}
+            
+            ### Changes
+            - Automated build and packaging
+            - Velopack update system integration
+            
+            ### Installation
+            Download and run the installer to update your FehlzeitApp.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

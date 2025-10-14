@@ -1,8 +1,12 @@
+using System;
 using System.Configuration;
 using System.Data;
+using System.IO;
+using System.Threading.Tasks;
 using System.Windows;
 using FehlzeitApp.Services;
 using FehlzeitApp.Views;
+using Velopack;
 
 namespace FehlzeitApp;
 
@@ -21,9 +25,60 @@ public partial class App : Application
     /// </summary>
     public static ConfigurationService? SharedConfigService { get; set; }
 
-    protected override void OnStartup(StartupEventArgs e)
+    protected override async void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+
+        // Initialize Velopack
+        VelopackApp.Build().Run();
+
+        // Add global exception handler
+        System.AppDomain.CurrentDomain.UnhandledException += (s, ex) =>
+        {
+            MessageBox.Show($"Unhandled exception: {ex.ExceptionObject}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        };
+
+        DispatcherUnhandledException += (s, ex) =>
+        {
+            MessageBox.Show($"Dispatcher exception: {ex.Exception.Message}\n\n{ex.Exception.StackTrace}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            ex.Handled = true;
+        };
+
+        // Check for updates before starting the app
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                // Set the update feed URL to GitHub releases
+                var updateUrl = "https://github.com/HaniAllamM/vsu-fehlzeit/releases/latest/download/";
+                var mgr = new UpdateManager(updateUrl);
+                var updateInfo = await mgr.CheckForUpdatesAsync();
+
+                if (updateInfo != null)
+                {
+                    // Show update notification to user
+                    var result = MessageBox.Show(
+                        $"A new version ({updateInfo.TargetFullRelease.Version}) is available!\n\n" +
+                        $"New version: {updateInfo.TargetFullRelease.Version}\n\n" +
+                        "Would you like to update now?",
+                        "Update Available",
+                        MessageBoxButton.YesNo,
+                        MessageBoxImage.Question);
+
+                    if (result == MessageBoxResult.Yes)
+                    {
+                        // Automatically apply update
+                        mgr.ApplyUpdatesAndRestart(updateInfo);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log error but don't block app startup
+                File.AppendAllText("update.log", $"[{DateTime.Now}] Update check failed: {ex.Message}\n");
+                System.Diagnostics.Debug.WriteLine($"Update check failed: {ex.Message}");
+            }
+        });
 
         try
         {
@@ -38,11 +93,37 @@ public partial class App : Application
             // If AuthService fails to initialize, continue anyway
             // LoginWindow will handle the fallback
             System.Diagnostics.Debug.WriteLine($"Failed to preload AuthService: {ex.Message}");
+            MessageBox.Show($"Warning: Failed to preload services: {ex.Message}\nThe app will continue with limited functionality.", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
 
-        // Show login window immediately
-        var loginWindow = new LoginWindow();
-        loginWindow.Show();
+        try
+        {
+            // Show login window immediately
+            var loginWindow = new LoginWindow();
+            loginWindow.Show();
+        }
+        catch (System.Exception ex)
+        {
+            MessageBox.Show($"Failed to show login window: {ex.Message}\n\n{ex.StackTrace}", "Critical Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            Shutdown(1);
+        }
+    }
+
+    protected override void OnExit(ExitEventArgs e)
+    {
+        // Clean up shared services
+        try
+        {
+            SharedAuthService?.Dispose();
+            SharedAuthService = null;
+            SharedConfigService = null;
+        }
+        catch (System.Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error during cleanup: {ex.Message}");
+        }
+
+        base.OnExit(e);
     }
 }
 

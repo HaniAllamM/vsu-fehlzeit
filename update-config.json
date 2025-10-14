@@ -1,0 +1,7 @@
+{
+  "updateUrl": "https://your-update-server.com",
+  "appId": "FehlzeitApp",
+  "checkOnStartup": true,
+  "autoDownload": false,
+  "showUpdateDialog": true
+}

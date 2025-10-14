@@ -28,9 +28,9 @@ namespace FehlzeitApp.Models
             set { _text = value; OnPropertyChanged(); }
         }
 
-        public event PropertyChangedEventHandler PropertyChanged;
+        public event PropertyChangedEventHandler? PropertyChanged;
         
-        protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
@@ -86,7 +86,7 @@ namespace FehlzeitApp.Models
         public DayData Day30 { get; } = new DayData();
         public DayData Day31 { get; } = new DayData();
 
-        public event PropertyChangedEventHandler PropertyChanged;
+        public event PropertyChangedEventHandler? PropertyChanged;
         
         protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
@@ -105,10 +105,10 @@ namespace FehlzeitApp.Models
             }
         }
         
-        public DayData GetDay(string dayKey)
+        public DayData? GetDay(string dayKey)
         {
             var dayProp = GetType().GetProperty(dayKey);
-            return dayProp != null ? (DayData)dayProp.GetValue(this) : null;
+            return dayProp != null ? (DayData?)dayProp.GetValue(this) : null;
         }
     }
 }

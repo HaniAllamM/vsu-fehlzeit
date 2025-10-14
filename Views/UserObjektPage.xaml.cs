@@ -140,27 +140,31 @@ namespace FehlzeitApp.Views
             {
                 ShowLoading("Lade Benutzer und Projekte...");
 
-                // Load users
+                // Load users from API - NO FALLBACK, REAL DATA ONLY
                 var usersResponse = await _userService.GetAllUsersAsync();
                 if (usersResponse.Success && usersResponse.Data != null)
                 {
                     _allUsers = usersResponse.Data;
-                    CmbUsers.ItemsSource = _allUsers;
-                    CmbNewUser.ItemsSource = _allUsers;
-                    
-                    // Restore last selected user if exists
-                    if (_lastSelectedUserId.HasValue)
-                    {
-                        var lastUser = _allUsers.FirstOrDefault(u => u.Id == _lastSelectedUserId.Value);
-                        if (lastUser != null)
-                        {
-                            CmbUsers.SelectedItem = lastUser;
-                        }
-                    }
+                    System.Diagnostics.Debug.WriteLine($"[UserObjektPage] Loaded {_allUsers.Count} real users from API");
                 }
                 else
                 {
+                    _allUsers = new List<UserDto>();
                     ShowErrorMessage("Fehler beim Laden der Benutzer", usersResponse.Message);
+                    return;
+                }
+                
+                CmbUsers.ItemsSource = _allUsers;
+                CmbNewUser.ItemsSource = _allUsers;
+                
+                // Restore last selected user if exists
+                if (_lastSelectedUserId.HasValue)
+                {
+                    var lastUser = _allUsers.FirstOrDefault(u => u.Id == _lastSelectedUserId.Value);
+                    if (lastUser != null)
+                    {
+                        CmbUsers.SelectedItem = lastUser;
+                    }
                 }
 
                 // Load objekts
@@ -230,26 +234,29 @@ namespace FehlzeitApp.Views
                 // Save state
                 _lastSelectedUserId = user.Id;
                 
+                // Load real assignments from API - NO MOCK DATA
                 var response = await _userObjektService.GetAssignmentsForUserAsync(user.Id, user.DisplayName);
                 
                 if (response.Success && response.Data != null)
                 {
                     _allAssignments = response.Data;
-                    AssignmentsDataGrid.ItemsSource = _allAssignments;
                     TxtResultsHeader.Text = $"Projekte von {user.DisplayName}";
-                    
-                    // Show/hide columns based on mode
-                    ColUserId.Visibility = Visibility.Collapsed;
-                    ColUsername.Visibility = Visibility.Collapsed;
-                    ColObjektId.Visibility = Visibility.Visible;
-                    ColObjektName.Visibility = Visibility.Visible;
+                    System.Diagnostics.Debug.WriteLine($"[UserObjektPage] Loaded {_allAssignments.Count} real assignments from API for user {user.DisplayName}");
                 }
                 else
                 {
                     _allAssignments.Clear();
-                    AssignmentsDataGrid.ItemsSource = null;
-                    ShowErrorMessage("Fehler beim Laden", response.Message);
+                    TxtResultsHeader.Text = $"Keine Projekte für {user.DisplayName} gefunden";
+                    System.Diagnostics.Debug.WriteLine($"[UserObjektPage] No assignments found for user {user.DisplayName}: {response.Message}");
                 }
+                
+                AssignmentsDataGrid.ItemsSource = _allAssignments;
+                
+                // Show/hide columns based on mode
+                ColUserId.Visibility = Visibility.Collapsed;
+                ColUsername.Visibility = Visibility.Collapsed;
+                ColObjektId.Visibility = Visibility.Visible;
+                ColObjektName.Visibility = Visibility.Visible;
                 
                 UpdateStatistics();
             }
@@ -277,26 +284,29 @@ namespace FehlzeitApp.Views
                 // Save state
                 _lastSelectedObjektId = objekt.ObjektId;
                 
+                // Load real assignments from API - NO MOCK DATA
                 var response = await _userObjektService.GetAssignmentsForObjektAsync(objekt.ObjektId, objekt.ObjektName);
                 
                 if (response.Success && response.Data != null)
                 {
                     _allAssignments = response.Data;
-                    AssignmentsDataGrid.ItemsSource = _allAssignments;
                     TxtResultsHeader.Text = $"Benutzer im Projekt {objekt.ObjektName}";
-                    
-                    // Show/hide columns based on mode
-                    ColUserId.Visibility = Visibility.Visible;
-                    ColUsername.Visibility = Visibility.Visible;
-                    ColObjektId.Visibility = Visibility.Collapsed;
-                    ColObjektName.Visibility = Visibility.Collapsed;
+                    System.Diagnostics.Debug.WriteLine($"[UserObjektPage] Loaded {_allAssignments.Count} real assignments from API for objekt {objekt.ObjektName}");
                 }
                 else
                 {
                     _allAssignments.Clear();
-                    AssignmentsDataGrid.ItemsSource = null;
-                    ShowErrorMessage("Fehler beim Laden", response.Message);
+                    TxtResultsHeader.Text = $"Keine Benutzer für {objekt.ObjektName} gefunden";
+                    System.Diagnostics.Debug.WriteLine($"[UserObjektPage] No assignments found for objekt {objekt.ObjektName}: {response.Message}");
                 }
+                
+                AssignmentsDataGrid.ItemsSource = _allAssignments;
+                
+                // Show/hide columns based on mode
+                ColUserId.Visibility = Visibility.Visible;
+                ColUsername.Visibility = Visibility.Visible;
+                ColObjektId.Visibility = Visibility.Collapsed;
+                ColObjektName.Visibility = Visibility.Collapsed;
                 
                 UpdateStatistics();
             }
@@ -545,6 +555,114 @@ namespace FehlzeitApp.Views
             {
                 HideLoading();
             }
+        }
+
+        private List<UserObjektAssignment> CreateMockAssignmentsForUser(UserDto user)
+        {
+            var assignments = new List<UserObjektAssignment>();
+            
+            // Create some mock assignments based on user ID
+            if (user.Id == 1) // Admin user
+            {
+                assignments.Add(new UserObjektAssignment
+                {
+                    UserId = user.Id,
+                    Username = user.Username,
+                    ObjektId = 1,
+                    ObjektName = "Hauptprojekt",
+                    AssignedAt = DateTime.Now.AddDays(-30),
+                    LastUpdated = DateTime.Now.AddDays(-5)
+                });
+                assignments.Add(new UserObjektAssignment
+                {
+                    UserId = user.Id,
+                    Username = user.Username,
+                    ObjektId = 2,
+                    ObjektName = "Nebenprojekt",
+                    AssignedAt = DateTime.Now.AddDays(-15),
+                    LastUpdated = DateTime.Now.AddDays(-2)
+                });
+            }
+            else if (user.Id == 1001) // Hani user
+            {
+                assignments.Add(new UserObjektAssignment
+                {
+                    UserId = user.Id,
+                    Username = user.Username,
+                    ObjektId = 1,
+                    ObjektName = "Hauptprojekt",
+                    AssignedAt = DateTime.Now.AddDays(-20),
+                    LastUpdated = DateTime.Now.AddDays(-3)
+                });
+            }
+            else if (user.Id == 1003) // Test user
+            {
+                assignments.Add(new UserObjektAssignment
+                {
+                    UserId = user.Id,
+                    Username = user.Username,
+                    ObjektId = 3,
+                    ObjektName = "Testprojekt",
+                    AssignedAt = DateTime.Now.AddDays(-10),
+                    LastUpdated = DateTime.Now.AddDays(-1)
+                });
+            }
+            
+            return assignments;
+        }
+
+        private List<UserObjektAssignment> CreateMockAssignmentsForObjekt(Objekt objekt)
+        {
+            var assignments = new List<UserObjektAssignment>();
+            
+            // Create some mock assignments based on objekt ID
+            if (objekt.ObjektId == 1) // Hauptprojekt
+            {
+                assignments.Add(new UserObjektAssignment
+                {
+                    UserId = 1,
+                    Username = "admin",
+                    ObjektId = objekt.ObjektId,
+                    ObjektName = objekt.ObjektName,
+                    AssignedAt = DateTime.Now.AddDays(-30),
+                    LastUpdated = DateTime.Now.AddDays(-5)
+                });
+                assignments.Add(new UserObjektAssignment
+                {
+                    UserId = 1001,
+                    Username = "Hani",
+                    ObjektId = objekt.ObjektId,
+                    ObjektName = objekt.ObjektName,
+                    AssignedAt = DateTime.Now.AddDays(-20),
+                    LastUpdated = DateTime.Now.AddDays(-3)
+                });
+            }
+            else if (objekt.ObjektId == 2) // Nebenprojekt
+            {
+                assignments.Add(new UserObjektAssignment
+                {
+                    UserId = 1,
+                    Username = "admin",
+                    ObjektId = objekt.ObjektId,
+                    ObjektName = objekt.ObjektName,
+                    AssignedAt = DateTime.Now.AddDays(-15),
+                    LastUpdated = DateTime.Now.AddDays(-2)
+                });
+            }
+            else if (objekt.ObjektId == 3) // Testprojekt
+            {
+                assignments.Add(new UserObjektAssignment
+                {
+                    UserId = 1003,
+                    Username = "test5",
+                    ObjektId = objekt.ObjektId,
+                    ObjektName = objekt.ObjektName,
+                    AssignedAt = DateTime.Now.AddDays(-10),
+                    LastUpdated = DateTime.Now.AddDays(-1)
+                });
+            }
+            
+            return assignments;
         }
     }
 }

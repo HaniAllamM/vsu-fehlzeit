@@ -6,13 +6,24 @@ namespace FehlzeitApp.Services
 {
     public class ObjektService : ApiServiceBase
     {
+        private readonly AuthService _authService;
+
         public ObjektService(AuthService authService, ConfigurationService configService) : base(authService, configService)
         {
+            _authService = authService;
         }
         
         public async Task<ApiResponse<List<Objekt>>> GetAllAsync()
         {
-            return await GetAsync<List<Objekt>>("objekts");
+            // Check if current user is admin and call appropriate endpoint
+            if (_authService.CurrentUser?.IsAdmin == true)
+            {
+                return await GetAsync<List<Objekt>>("objekts/all");
+            }
+            else
+            {
+                return await GetAsync<List<Objekt>>("objekts");
+            }
         }
         
         public async Task<ApiResponse<List<Objekt>>> GetAllObjektsAsync()
